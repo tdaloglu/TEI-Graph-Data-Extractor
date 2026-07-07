@@ -6,7 +6,7 @@ namespace TEIGraphDataExtractor.Services
     /// Piksel koordinatlarını gerçek dünya kontur grafiği değerlerine dönüştüren servis.
     /// Single Responsibility (SRP): Yalnızca kalibrasyon oranları ve koordinat matematiğinden sorumludur.
     /// </summary>
-    public class CalibrationService
+    public class CoordinateConverter
     {
         // Gerçek dünya sınır değerleri
         public double RealXMin { get; private set; }
@@ -15,8 +15,8 @@ namespace TEIGraphDataExtractor.Services
         public double RealYMax { get; private set; }
 
         // Ekranda tıklanan referans piksel koordinatları
-        public double OriginPixelX { get; private set; }
-        public double OriginPixelY { get; private set; }
+        public double MinPixelX { get; private set; }
+        public double MinPixelY { get; private set; }
         public double XMaxPixelX { get; private set; }
         public double YMaxPixelY { get; private set; }
 
@@ -31,15 +31,15 @@ namespace TEIGraphDataExtractor.Services
         /// Kalibrasyon parametrelerini ayarlar ve dönüşüm katsayılarını hesaplar.
         /// </summary>
         public void Calibrate(
-            double originPxX, double originPxY,
+            double minPxX, double minPxY,
             double xMaxPxX, double yMaxPxY,
             double realXMin, double realXMax,
             double realYMin, double realYMax)
         {
             // 1. GÜVENLİK KONTROLÜ: Sıfıra Bölünme (Division by Zero) Engellemesi
             // Eğer kullanıcı aynı piksele tıkladıysa veya fark çok küçükse (< 0.0001) hata fırlat
-            double pixelDeltaX = Math.Abs(xMaxPxX - originPxX);
-            double pixelDeltaY = Math.Abs(originPxY - yMaxPxY);
+            double pixelDeltaX = Math.Abs(xMaxPxX - minPxX);
+            double pixelDeltaY = Math.Abs(minPxY - yMaxPxY);
 
             if (pixelDeltaX < 0.0001 || pixelDeltaY < 0.0001)
             {
@@ -54,8 +54,8 @@ namespace TEIGraphDataExtractor.Services
             }
 
             // Değerleri ata
-            OriginPixelX = originPxX;
-            OriginPixelY = originPxY;
+            MinPixelX = minPxX;
+            MinPixelY = minPxY;
             XMaxPixelX = xMaxPxX;
             YMaxPixelY = yMaxPxY;
 
@@ -65,10 +65,10 @@ namespace TEIGraphDataExtractor.Services
             RealYMax = realYMax;
 
             // 2. KATSAYI HESAPLAMA (Önceden hesaplayarak fare hareketinde işlem yükünü azaltıyoruz)
-            _scaleX = (RealXMax - RealXMin) / (XMaxPixelX - OriginPixelX);
+            _scaleX = (RealXMax - RealXMin) / (XMaxPixelX - MinPixelX);
             
             // Ekran Y koordinatları aşağı doğru arttığı için (OriginPixelY > YMaxPixelY) olur.
-            _scaleY = (RealYMax - RealYMin) / (OriginPixelY - YMaxPixelY);
+            _scaleY = (RealYMax - RealYMin) / (MinPixelY - YMaxPixelY);
 
             IsCalibrated = true;
         }
@@ -84,10 +84,10 @@ namespace TEIGraphDataExtractor.Services
             }
 
             // X Dönüşümü: Orijinden ne kadar sağa gidildiği * ölçek
-            double realX = RealXMin + (pixelX - OriginPixelX) * _scaleX;
+            double realX = RealXMin + (pixelX - MinPixelX) * _scaleX;
 
             // Y Dönüşümü: Orijinden ne kadar yukarı gidildiği (Ekran tersliği sebebiyle OriginY - pixelY) * ölçek
-            double realY = RealYMin + (OriginPixelY - pixelY) * _scaleY;
+            double realY = RealYMin + (MinPixelY - pixelY) * _scaleY;
 
             // Math.Round ile virgüllü sayı hatalarını (Floating point precision) sınırlayabiliriz (Örn: 4 basamak)
             return (Math.Round(realX, 4), Math.Round(realY, 4));

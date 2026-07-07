@@ -1,22 +1,174 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:TEIGraphDataExtractor.ViewModels"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="TEIGraphDataExtractor.Views.MainWindow"
-        x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
-        Title="TEIGraphDataExtractor"
-        Width="1200" Height="800"
-        Background="#0b1120">
+        Title="TEI-Graph-Data-Extractor" 
+        Width="1350" Height="850"
+        Background="#0b1120"
+        WindowStartupLocation="CenterScreen">
 
-    <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainWindowViewModel/>
-    </Design.DataContext>
+ <Grid x:Name="MainLayoutGrid">
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="280" MinWidth="100" MaxWidth="400" />
+        <ColumnDefinition Width="4"/>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="380" />
+    </Grid.ColumnDefinitions>
+        
+        <Border Grid.Column="0" Background="#101D36" BorderBrush="#2D3B55" BorderThickness="0,0,1,0" Padding="15">
+            <Grid RowDefinitions="Auto, Auto, Auto, *">
+                
+                <StackPanel Grid.Row="0" Margin="0,0,0,20">
+                    <TextBlock Text="DOSYA VE VERİ" Foreground="#94a3b8" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
+                    <Button Content="🖼️ Resim Ekle" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,0,10" CornerRadius="6"/>
+                    <Button Content="📊 Veriyi Görüntüle" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" CornerRadius="6"/>
+                </StackPanel>
 
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Border Grid.Row="1" Height="1" Background="#2D3B55" Margin="0,0,0,20"/>
 
+                <StackPanel Grid.Row="2" Margin="0,0,0,20">
+                    <TextBlock Text="DÜZENLEME ARAÇLARI" Foreground="#94a3b8" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
+                    <Button Content="✒️ Kalem (Seri Çizim)" Background="#4DA6FF" Foreground="White" FontSize="14" FontWeight="Bold" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,0,10" Padding="0,10" CornerRadius="6"/>
+                    
+                    <UniformGrid Columns="2" Rows="2">
+                        <Button Content="➕ Ekle" Background="#2D3B55" Foreground="White" Margin="0,0,4,4" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                        <Button Content="🖐️ Taşı (Adj)" Background="#2D3B55" Foreground="White" Margin="4,0,0,4" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                        <Button Content="🗑️ Sil (Del)" Background="#2D3B55" Foreground="White" Margin="0,4,4,0" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                        <Button Content="🧹 Temizle" Background="#2D3B55" Foreground="White" Margin="4,4,0,0" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                    </UniformGrid>
+                    
+                    <CheckBox Content="Crosshair Göster" Foreground="#94a3b8" IsChecked="True" Margin="0,15,0,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="3" Margin="0,10,0,0">
+                    <TextBlock Text="Z-DEĞERİ GRUPLARI" Foreground="#FFA726" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
+                    <Grid ColumnDefinitions="*, Auto" Margin="0,0,0,15">
+                        <TextBlock Text="Toplam Grup Sayısı:" Foreground="White" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" Text="1" Width="40" Background="#0b1120" Foreground="White" TextAlignment="Center" CornerRadius="4"/>
+                    </Grid>
+                    <Border Background="#0b1120" CornerRadius="6" Padding="8" Margin="0,0,0,8">
+                        <Grid ColumnDefinitions="Auto, *, Auto">
+                            <Ellipse Width="12" Height="12" Fill="#FF4D4D" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1" Text="Z = 0.8" Background="Transparent" Foreground="White" BorderThickness="0" VerticalAlignment="Center"/>
+                            <Button Grid.Column="2" Content="Seç" FontSize="11" Padding="12,5" Background="#2D3B55" Foreground="White" CornerRadius="4"/>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+            </Grid>
+        </Border>
+
+        <GridSplitter Grid.Column="1" Background="#2D3B55" ResizeDirection="Columns" Cursor="SizeWestEast" />
+
+        <Grid Grid.Column="2" Background="#070b14">
+            
+
+
+            <Viewbox Stretch="Uniform" Margin="20,50,20,20">
+                <Border Background="#101D36" BorderBrush="#2D3B55" BorderThickness="1" CornerRadius="8" Width="800" Height="600">
+                    <Grid>
+                        <TextBlock Text="Yüklenen Grafik Burada Gösterilecek" Foreground="#2D3B55" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16"/>
+                        <Canvas x:Name="DrawingCanvas" Background="Transparent"/>
+                    </Grid>
+                </Border>
+            </Viewbox>
+
+            <Border Background="#101D36" CornerRadius="6" Padding="10,5" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="20" BorderBrush="#2D3B55" BorderThickness="1">
+                <TextBlock Text="X: 432px | Y: 156px" Foreground="#4DA6FF" FontSize="12" FontFamily="Consolas"/>
+            </Border>
+        </Grid>
+
+        <Border Grid.Column="3" Background="#101D36" BorderBrush="#2D3B55" BorderThickness="1,0,0,0">
+            <Grid RowDefinitions="Auto, *">
+                
+                <Border Grid.Row="0" Padding="15">
+                    <StackPanel>
+                        <TextBlock Text="BÜYÜTEÇ (MAGNIFIER)" Foreground="#94a3b8" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <Border Height="220" Background="#070b14" BorderBrush="#2D3B55" BorderThickness="1" CornerRadius="8" ClipToBounds="True">
+                            <Grid>
+                                <TextBlock Text="Yakın Çekim" Foreground="#2D3B55" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Path Data="M 175,0 L 175,220 M 0,110 L 350,110" Stroke="#FFA726" StrokeThickness="1" Opacity="0.5"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <TabControl Grid.Row="1" Margin="15,0,15,15">
+                    
+                    <TabControl.Styles>
+                        <Style Selector="TabItem">
+                            <Setter Property="FontSize" Value="13"/>
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="Foreground" Value="#94a3b8"/>
+                            <Setter Property="Padding" Value="20,10"/>
+                            <Setter Property="Margin" Value="0,0,5,0"/>
+                        </Style>
+                        <Style Selector="TabItem:selected">
+                            <Setter Property="Foreground" Value="#4DA6FF"/>
+                        </Style>
+                        <Style Selector="TabItem:selected /template/ Border#PART_SelectedPipe">
+                            <Setter Property="IsVisible" Value="True" />
+                            <Setter Property="Background" Value="#4DA6FF" />
+                        </Style>
+                    </TabControl.Styles>
+
+                    <TabItem Header="🎯 KALİBRASYON">
+                        <Border Background="#070b14" BorderBrush="#2D3B55" BorderThickness="1" CornerRadius="0,8,8,8" Padding="15" Margin="0,5,0,0">
+                            <StackPanel>
+                                <TextBlock Text="1. Piksel Noktalarını Seç:" Foreground="#94a3b8" FontSize="12" Margin="0,0,0,10"/>
+                                
+                                <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,*" Margin="0,0,0,15">
+                                    <Button Grid.Row="0" Grid.Column="0" Content="📍 X1 Noktası" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" Margin="0,0,4,8" CornerRadius="4"/>
+                                    <Button Grid.Row="0" Grid.Column="1" Content="📍 X2 Noktası" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" Margin="4,0,0,8" CornerRadius="4"/>
+                                    <Button Grid.Row="1" Grid.Column="0" Content="📍 Y1 Noktası" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" Margin="0,0,4,0" CornerRadius="4"/>
+                                    <Button Grid.Row="1" Grid.Column="1" Content="📍 Y2 Noktası" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" Margin="4,0,0,0" CornerRadius="4"/>
+                                </Grid>
+                                
+                                <TextBlock Text="2. Gerçek Değerleri Gir:" Foreground="#FFA726" FontSize="12" Margin="0,0,0,10"/>
+                                
+                                <Grid ColumnDefinitions="*, *" Margin="0,0,0,8">
+                                    <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                                        <TextBlock Text="X1 Değeri:" FontSize="11" Foreground="#94a3b8" Margin="0,0,0,4"/>
+                                        <TextBox Text="0.0" Background="#101D36" Foreground="White" CornerRadius="4"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="5,0,0,0">
+                                        <TextBlock Text="X2 Değeri:" FontSize="11" Foreground="#94a3b8" Margin="0,0,0,4"/>
+                                        <TextBox Text="1.0" Background="#101D36" Foreground="White" CornerRadius="4"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid ColumnDefinitions="*, *">
+                                    <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                                        <TextBlock Text="Y1 Değeri:" FontSize="11" Foreground="#94a3b8" Margin="0,0,0,4"/>
+                                        <TextBox Text="0.0" Background="#101D36" Foreground="White" CornerRadius="4"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="5,0,0,0">
+                                        <TextBlock Text="Y2 Değeri:" FontSize="11" Foreground="#94a3b8" Margin="0,0,0,4"/>
+                                        <TextBox Text="1.0" Background="#101D36" Foreground="White" CornerRadius="4"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </TabItem>
+
+                    <TabItem Header="💾 ÇIKTI &amp; VERİ">
+                        <Border Background="#070b14" BorderBrush="#2D3B55" BorderThickness="1" CornerRadius="0,8,8,8" Padding="15" Margin="0,5,0,0">
+                            <StackPanel>
+                                <Border Background="#101D36" CornerRadius="6" Padding="12" Margin="0,0,0,15" BorderBrush="#2D3B55" BorderThickness="1">
+                                    <StackPanel>
+                                        <TextBlock Text="Aktif Grup: Z = 1.2" Foreground="#4DA6FF" FontSize="13" FontWeight="Bold" Margin="0,0,0,5"/>
+                                        <TextBlock Text="Toplam Toplanan Nokta: 42" Foreground="White" FontSize="12"/>
+                                    </StackPanel>
+                                </Border>
+                                
+                                <Button Content="💾 DB'ye Yaz (SQLite)" Background="#4DA6FF" Foreground="White" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,0,10" Padding="0,12" CornerRadius="4" FontSize="13" FontWeight="Bold"/>
+                                <Button Content="📄 CSV Olarak İndir" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,12" CornerRadius="4" FontSize="13"/>
+                            </StackPanel>
+                        </Border>
+                    </TabItem>
+                    
+                </TabControl>
+            </Grid>
+        </Border>
+    </Grid>
 </Window>

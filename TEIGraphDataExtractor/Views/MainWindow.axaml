@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:TEIGraphDataExtractor.ViewModels"
         x:Class="TEIGraphDataExtractor.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
         Title="TEI-Graph-Data-Extractor" 
         Width="1350" Height="850"
         Background="#0b1120"
@@ -73,9 +74,6 @@
                 </Border>
             </Viewbox>
 
-            <Border Background="#101D36" CornerRadius="6" Padding="10,5" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="20" BorderBrush="#2D3B55" BorderThickness="1">
-                <TextBlock Text="X: 432px | Y: 156px" Foreground="#4DA6FF" FontSize="12" FontFamily="Consolas"/>
-            </Border>
         </Grid>
 
         <Border Grid.Column="3" Background="#101D36" BorderBrush="#2D3B55" BorderThickness="1,0,0,0">

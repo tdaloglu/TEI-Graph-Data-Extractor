@@ -20,7 +20,7 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            TEIGraphDataExtractor.Services.Database.DatabaseTester.RunAllTests();
+            //TEIGraphDataExtractor.Services.Database.DatabaseTester.RunAllTests();
 
             desktop.MainWindow = new MainWindow
             {

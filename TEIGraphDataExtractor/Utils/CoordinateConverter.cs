@@ -1,6 +1,6 @@
 using System;
 
-namespace TEIGraphDataExtractor.Services
+namespace TEIGraphDataExtractor.Utils
 {
     /// <summary>
     /// Piksel koordinatlarını gerçek dünya kontur grafiği değerlerine dönüştüren servis.

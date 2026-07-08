@@ -1,11 +1,14 @@
 using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
 using Avalonia.Interactivity;
 using Avalonia.Input;
+using Avalonia.Media; //brushes
 using Avalonia.Platform.Storage;
 using Avalonia.Media.Imaging;
 using System;
 using TEIGraphDataExtractor.ViewModels;
 using TEIGraphDataExtractor.Views;
+
 
 namespace TEIGraphDataExtractor.Views;
 
@@ -13,7 +16,9 @@ public partial class MainWindow : Window
 {
     private string _activeCalibrationStep = ""; //hangi nokta secili
     private int _calibrationClicksCount = 0; // ==4 olunca kalibre edilebilecek
-    
+    private bool _isDrawModeActive=false;
+    private Avalonia.Point _lastCollectedPoint = new Avalonia.Point(0, 0);
+
     public MainWindow()
     {
         InitializeComponent();
@@ -79,6 +84,20 @@ public partial class MainWindow : Window
                 case "Y2": vm.YMaxPixelY = point.Y; break;
             }
 
+            var marker = new Ellipse
+            {
+                Width = 10,
+                Height=10,
+                Fill = Brushes.Red,
+                Stroke=Brushes.White,
+                StrokeThickness=2
+            };
+            
+            Canvas.SetLeft(marker, point.X-5);
+            Canvas.SetTop(marker, point.Y-5);
+            DrawingCanvas.Children.Add(marker);
+
+
             vm.SystemStatus = $"✅ {_activeCalibrationStep} Noktası Alındı ({point.X:F0}px, {point.Y:F0}px).";
             _activeCalibrationStep = ""; // Seçimi sıfırla
             _calibrationClicksCount++;
@@ -87,6 +106,7 @@ public partial class MainWindow : Window
             if (_calibrationClicksCount >= 4)
             {
                 bool success = vm.TryCalibrate();
+                vm.SystemStatus = "4 kalibrasyon noktası başarı ile seçildi. Uygun değerler ile 'Kalibrasyonu Tamamla' butonuna basabilirsiniz.";
                 _calibrationClicksCount = 0; // Hata olsa da olmasa da bir sonraki deneme için sayacı sıfırla
             }
         }
@@ -102,11 +122,58 @@ public partial class MainWindow : Window
             // KALİBRASYON YAPILDIYSA: Pikseli formüle sok ve gerçek mühendislik değerini sağ alta yaz
             var realCoords = vm.Converter.PixelToRealWorld(point.X, point.Y);
             CoordinateText.Text = $"Gerçek X: {realCoords.RealX} | Gerçek Y: {realCoords.RealY}";
+        
+            var properties = e.GetCurrentPoint(DrawingCanvas).Properties;
+            if(_isDrawModeActive && properties.IsLeftButtonPressed)
+            {
+                double distance = Math.Sqrt(Math.Pow(point.X - _lastCollectedPoint.X, 2) + Math.Pow(point.Y - _lastCollectedPoint.Y, 2));
+                //oklid mesafesi
+                if (distance >= 5)
+                {
+                    var dataDot = new Ellipse{ Width = 4, Height = 4, Fill = Brushes.Cyan };
+                    Canvas.SetLeft(dataDot, point.X - 2);
+                    Canvas.SetTop(dataDot, point.Y - 2);
+                    DrawingCanvas.Children.Add(dataDot);
+
+                    // geçici noktayı güncelle
+                    _lastCollectedPoint = point;
+                }
+            }
         }
+
+
+
+
         else
         {
             // KALİBRASYON YOKSA: Sadece ham piksel değerlerini göster
             CoordinateText.Text = $"Piksel X: {point.X:F0}px | Piksel Y: {point.Y:F0}px";
         }
     }
+
+    public void DrawModeButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm){
+            if(!vm.Converter.IsCalibrated)
+            {
+            vm.SystemStatus = "Önce kalibrasyonu tamamlamalısınız!";
+            return;
+            }
+        
+        _isDrawModeActive = !_isDrawModeActive;
+
+        vm.SystemStatus = _isDrawModeActive
+            ? "✒️ Kalem Modu AKTİF. Farenin sol tuşuna basılı tutarak çizim yapın." 
+            : "✒️ Kalem Modu KAPATILDI.";
+        }
+    }
+
+    public void CalibrateButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            bool success = vm.TryCalibrate();
+        }
+    }
+
 }

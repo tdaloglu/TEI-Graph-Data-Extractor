@@ -31,13 +31,13 @@ public partial class MainWindowViewModel : ViewModelBase
     private double _realXMin = 0.0;
     public double RealXMin { get => _realXMin; set { _realXMin = value; RaisePropertyChanged(); } }
 
-    private double _realXMax = 1.0;
+    private double _realXMax = 0.0;
     public double RealXMax { get => _realXMax; set { _realXMax = value; RaisePropertyChanged(); } }
 
     private double _realYMin = 0.0;
     public double RealYMin { get => _realYMin; set { _realYMin = value; RaisePropertyChanged(); } }
 
-    private double _realYMax = 1.0;
+    private double _realYMax = 0.0;
     public double RealYMax { get => _realYMax; set { _realYMax = value; RaisePropertyChanged(); } }
 
 
@@ -53,7 +53,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         try
         {
-            Converter.Calibrate(MinPixelX, MinPixelY, XMaxPixelX, YMaxPixelY, RealXMin, RealXMax, RealYMin, RealYMax);
+            Converter.Calibrate(MinPixelX, XMaxPixelX, MinPixelY, YMaxPixelY, RealXMin, RealXMax, RealYMin, RealYMax);
             SystemStatus = "🚀 Kalibrasyon Başarılı! Farenizi gezdirip test edebilirsiniz.";
             return true;
         }

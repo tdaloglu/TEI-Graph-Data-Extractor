@@ -29,7 +29,7 @@
 
                 <StackPanel Grid.Row="2" Margin="0,0,0,20">
                     <TextBlock Text="DÜZENLEME ARAÇLARI" Foreground="#94a3b8" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
-                    <Button Content="✒️ Kalem (Seri Çizim)" Background="#4DA6FF" Foreground="White" FontSize="14" FontWeight="Bold" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,0,10" Padding="0,10" CornerRadius="6"/>
+                    <Button Content="✒️ Kalem (Seri Çizim)" Click="DrawModeButton_Click" Background="#4DA6FF" Foreground="White" FontSize="14" FontWeight="Bold" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,0,10" Padding="0,10" CornerRadius="6"/>
                     
                     <UniformGrid Columns="2" Rows="2">
                         <Button Content="➕ Ekle" Background="#2D3B55" Foreground="White" Margin="0,0,4,4" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
@@ -131,28 +131,42 @@
                                 
                                 <Grid ColumnDefinitions="*, *" Margin="0,0,0,8">
                                     <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                                        <TextBlock Text="X1 (Min):" FontSize="11" Foreground="#94a3b8" Margin="0,0,0,4"/>
+                                        <TextBlock Text="X1 :" FontSize="11" Foreground="#94a3b8" Margin="0,0,0,4"/>
                                         <TextBox Text="{Binding RealXMin}" Background="#101D36" Foreground="White" CornerRadius="4"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                                        <TextBlock Text="X2 (Max):" FontSize="11" Foreground="#94a3b8" Margin="0,0,0,4"/>
+                                        <TextBlock Text="X2 :" FontSize="11" Foreground="#94a3b8" Margin="0,0,0,4"/>
                                         <TextBox Text="{Binding RealXMax}" Background="#101D36" Foreground="White" CornerRadius="4"/>
                                     </StackPanel>
                                 </Grid>
 
                                 <Grid ColumnDefinitions="*, *">
                                     <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                                        <TextBlock Text="Y1 (Min):" FontSize="11" Foreground="#94a3b8" Margin="0,0,0,4"/>
+                                        <TextBlock Text="Y1 :" FontSize="11" Foreground="#94a3b8" Margin="0,0,0,4"/>
                                         <TextBox Text="{Binding RealYMin}" Background="#101D36" Foreground="White" CornerRadius="4"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                                        <TextBlock Text="Y2 (Max):" FontSize="11" Foreground="#94a3b8" Margin="0,0,0,4"/>
+                                        <TextBlock Text="Y2 :" FontSize="11" Foreground="#94a3b8" Margin="0,0,0,4"/>
                                         <TextBox Text="{Binding RealYMax}" Background="#101D36" Foreground="White" CornerRadius="4"/>
                                     </StackPanel>
                                 </Grid>
+                                        <Button Content="⚙️ KALİBRASYONU TAMAMLA" 
+                                            Click="CalibrateButton_Click"    
+                                            Background="#4DA6FF" 
+                                            Foreground="White" 
+                                            FontWeight="Bold" 
+                                            HorizontalAlignment="Stretch" 
+                                            HorizontalContentAlignment="Center" 
+                                            Margin="0,15,0,0" 
+                                            Padding="0,10" 
+                                            CornerRadius="6"/>
                             </StackPanel>
+               
                         </Border>
+
                     </TabItem>
+
+                    
 
                     <TabItem Header="💾 ÇIKTI &amp; VERİ">
                         <Border Background="#070b14" BorderBrush="#2D3B55" BorderThickness="1" CornerRadius="0,8,8,8" Padding="15" Margin="0,5,0,0">

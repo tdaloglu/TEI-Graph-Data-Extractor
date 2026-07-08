@@ -32,9 +32,9 @@
                     <Button Content="✒️ Kalem (Seri Çizim)" Click="DrawModeButton_Click" Background="#4DA6FF" Foreground="White" FontSize="14" FontWeight="Bold" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,0,10" Padding="0,10" CornerRadius="6"/>
                     
                     <UniformGrid Columns="2" Rows="2">
-                        <Button Content="➕ Ekle" Background="#2D3B55" Foreground="White" Margin="0,0,4,4" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                        <Button Content="➕ Ekle" Click="AddPointButton_Click" Background="#2D3B55" Foreground="White" Margin="0,0,4,4" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
                         <Button Content="🖐️ Taşı (Adj)" Background="#2D3B55" Foreground="White" Margin="4,0,0,4" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
-                        <Button Content="🗑️ Sil (Del)" Background="#2D3B55" Foreground="White" Margin="0,4,4,0" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                        <Button Content="Geri al" Click="DeletePointButton_Click" Background="#2D3B55" Foreground="White" Margin="0,4,4,0" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
                         <Button Content="🧹 Temizle" Background="#2D3B55" Foreground="White" Margin="4,4,0,0" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
                     </UniformGrid>
                     

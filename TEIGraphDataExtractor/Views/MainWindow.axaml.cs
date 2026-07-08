@@ -19,7 +19,8 @@ public partial class MainWindow : Window
     private bool _isDrawModeActive=false;
     private System.Collections.Generic.Dictionary<string, Ellipse> _calibrationMarkers = new();
     private Avalonia.Point _lastCollectedPoint = new Avalonia.Point(0, 0);
-
+    private System.Collections.Generic.Stack<Ellipse> _drawnDataDots = new();
+    private bool _isSingleAddModeActive = false; // add point ? 
     public MainWindow()
     {
         InitializeComponent();
@@ -57,23 +58,19 @@ public partial class MainWindow : Window
     private void SetCalibrationStep(string step, string message)
     {
         _activeCalibrationStep = step;
-        if (DataContext is MainWindowViewModel vm)
-        {
-            vm.SystemStatus = message;
-        }
+        if (DataContext is MainWindowViewModel vm) vm.SystemStatus = message;
     }
 
 
     public void DrawingCanvas_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        // Eğer hiçbir kalibrasyon butonuna basılmadıysa tıklamayı görmezden gel
-        if (string.IsNullOrEmpty(_activeCalibrationStep)) return;
-
         // Farenin tuval üzerindeki X ve Y pikselini al
         var point = e.GetPosition(DrawingCanvas);
 
         if (DataContext is MainWindowViewModel vm)
         {
+            if (!string.IsNullOrEmpty(_activeCalibrationStep))
+            {
             // İlgili pikseli ViewModel'in geçici hafızasına yaz
             switch (_activeCalibrationStep)
             {
@@ -117,11 +114,29 @@ public partial class MainWindow : Window
             // 4 Nokta da seçildiyse Backend servisine kalibrasyon komutunu gönder!
             if (_calibrationClicksCount >= 4)
             {
-                bool success = vm.TryCalibrate();
                 vm.SystemStatus = "4 kalibrasyon noktası başarı ile seçildi. Uygun değerler ile 'Kalibrasyonu Tamamla' butonuna basabilirsiniz.";
                 _calibrationClicksCount = 0; // Hata olsa da olmasa da bir sonraki deneme için sayacı sıfırla
             }
+            return;
         }
+
+        if(_isSingleAddModeActive && string.IsNullOrEmpty(_activeCalibrationStep))
+        {
+            var newPoint = vm.CaptureStreamPoint(point.X, point.Y);
+            if (newPoint != null)
+            {
+                var dataDot = new Ellipse
+                { Width = 4, Height = 4, Fill = Brushes.Red};
+                Canvas.SetLeft(dataDot, point.X - 2);
+                Canvas.SetTop(dataDot, point.Y - 2);
+                DrawingCanvas.Children.Add(dataDot); // Ekrana ekle
+                _drawnDataDots.Push(dataDot);        // GÖRSEL HAFIZAYA EKLE (İleride silebilmek için)
+
+                vm.SystemStatus = $"📍 Nokta eklendi: X={newPoint.XValue:F3}, Y={newPoint.YValue:F3}";
+                }
+            }
+        }
+
     }
 
    
@@ -136,27 +151,27 @@ public partial class MainWindow : Window
             CoordinateText.Text = $"Gerçek X: {realCoords.RealX} | Gerçek Y: {realCoords.RealY}";
         
             var properties = e.GetCurrentPoint(DrawingCanvas).Properties;
+            
             if(_isDrawModeActive && properties.IsLeftButtonPressed)
             {
                 double distance = Math.Sqrt(Math.Pow(point.X - _lastCollectedPoint.X, 2) + Math.Pow(point.Y - _lastCollectedPoint.Y, 2));
                 //oklid mesafesi
                 if (distance >= 5)
                 {
+                    var newPoint = vm.CaptureStreamPoint(point.X, point.Y);
+                    if (newPoint!=null){
                     var dataDot = new Ellipse{ Width = 4, Height = 4, Fill = Brushes.Red };
                     Canvas.SetLeft(dataDot, point.X - 2);
                     Canvas.SetTop(dataDot, point.Y - 2);
-                    DrawingCanvas.Children.Add(dataDot);
 
+                    DrawingCanvas.Children.Add(dataDot);
+                    _drawnDataDots.Push(dataDot); //görsel liteye kaydet!
                     // geçici noktayı güncelle
-                    _lastCollectedPoint = point;
-                    Console.WriteLine($"Toplanan Nokta: X={realCoords.RealX}, Y={realCoords.RealY}");
+                    _lastCollectedPoint = point;}
                 
                 }
             }
         }
-
-
-
 
         else
         {
@@ -208,10 +223,52 @@ public partial class MainWindow : Window
             
             // 3. Kod tarafındaki hafıza sayaçlarını temizle
             _calibrationMarkers.Clear();
+            _drawnDataDots.Clear();
+            vm.LiveDataPoints.Clear();
+            vm._currentOrderIndex=1;
+
             _calibrationClicksCount = 0;
             _activeCalibrationStep = "";
+            _isDrawModeActive = false;
+            _isSingleAddModeActive = false;
             
             vm.SystemStatus = "🔄 Tüm kalibrasyon ve grafik verileri başarıyla sıfırlandı.";
+        }
+    }
+
+
+    public void DeletePointButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is TEIGraphDataExtractor.ViewModels.MainWindowViewModel vm && vm.LiveDataPoints.Count > 0)
+        {
+            vm.LiveDataPoints.RemoveAt(vm.LiveDataPoints.Count-1);
+            vm._currentOrderIndex--;
+        
+        if (_drawnDataDots.Count > 0)
+        {
+            var lastDot = _drawnDataDots.Pop(); //son noktayı stackten cıkar
+            DrawingCanvas.Children.Remove(lastDot); //ekreandan sil
+        }
+        vm.SystemStatus = $"↩️ Son nokta silindi. Kalan nokta: {vm.LiveDataPoints.Count}";
+        }
+    }
+
+    public void AddPointButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            if (!vm.Converter.IsCalibrated)
+            {
+                vm.SystemStatus = "⚠️ Önce kalibrasyonu tamamlamalısınız!";
+                return;
+            }
+
+            _isSingleAddModeActive = !_isSingleAddModeActive;
+            if (_isSingleAddModeActive) _isDrawModeActive = false; // Çakışmasın diye diğerini kapat
+
+            vm.SystemStatus = _isSingleAddModeActive 
+                ? "📍 Tek Nokta Ekleme AKTİF. Resme tıklayarak hassas nokta ekleyebilirsiniz." 
+                : "📍 Tek Nokta Ekleme KAPATILDI.";
         }
     }
 

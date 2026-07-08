@@ -8,20 +8,20 @@
         Background="#0b1120"
         WindowStartupLocation="CenterScreen">
 
- <Grid x:Name="MainLayoutGrid">
-    <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="280" MinWidth="100" MaxWidth="400" />
-        <ColumnDefinition Width="4"/>
-        <ColumnDefinition Width="*"/>
-        <ColumnDefinition Width="380" />
-    </Grid.ColumnDefinitions>
+    <Grid x:Name="MainLayoutGrid">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="280" MinWidth="100" MaxWidth="400" />
+            <ColumnDefinition Width="4"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="380" />
+        </Grid.ColumnDefinitions>
         
         <Border Grid.Column="0" Background="#101D36" BorderBrush="#2D3B55" BorderThickness="0,0,1,0" Padding="15">
             <Grid RowDefinitions="Auto, Auto, Auto, *">
                 
                 <StackPanel Grid.Row="0" Margin="0,0,0,20">
                     <TextBlock Text="DOSYA VE VERİ" Foreground="#94a3b8" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
-                    <Button Content="🖼️ Resim Ekle" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,0,10" CornerRadius="6"/>
+                    <Button Content="🖼️ Resim Ekle" Click="LoadImageButton_Click" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,0,10" CornerRadius="6"/>
                     <Button Content="📊 Veriyi Görüntüle" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" CornerRadius="6"/>
                 </StackPanel>
 
@@ -45,7 +45,7 @@
                     <TextBlock Text="Z-DEĞERİ GRUPLARI" Foreground="#FFA726" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
                     <Grid ColumnDefinitions="*, Auto" Margin="0,0,0,15">
                         <TextBlock Text="Toplam Grup Sayısı:" Foreground="White" VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1" Text="1" Width="40" Background="#0b1120" Foreground="White" TextAlignment="Center" CornerRadius="4"/>
+                        <TextBox Grid.Column="1" Text="{Binding GroupCount}" Width="40" Background="#0b1120" Foreground="White" TextAlignment="Center" CornerRadius="4"/>
                     </Grid>
                     <Border Background="#0b1120" CornerRadius="6" Padding="8" Margin="0,0,0,8">
                         <Grid ColumnDefinitions="Auto, *, Auto">
@@ -55,24 +55,29 @@
                         </Grid>
                     </Border>
                 </StackPanel>
-
             </Grid>
         </Border>
 
         <GridSplitter Grid.Column="1" Background="#2D3B55" ResizeDirection="Columns" Cursor="SizeWestEast" />
 
-        <Grid Grid.Column="2" Background="#070b14">
+<Grid Grid.Column="2" Background="#070b14">
             
-
-
             <Viewbox Stretch="Uniform" Margin="20,50,20,20">
                 <Border Background="#101D36" BorderBrush="#2D3B55" BorderThickness="1" CornerRadius="8" Width="800" Height="600">
                     <Grid>
-                        <TextBlock Text="Yüklenen Grafik Burada Gösterilecek" Foreground="#2D3B55" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16"/>
-                        <Canvas x:Name="DrawingCanvas" Background="Transparent"/>
+                        <TextBlock Text="Yüklenen Grafik Burada Gösterilecek" IsVisible="{Binding GraphImage, Converter={x:Static ObjectConverters.IsNull}}" Foreground="#2D3B55" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16"/>
+                        <Image Source="{Binding GraphImage}" Stretch="Uniform" />
+                        <Canvas x:Name="DrawingCanvas" Background="Transparent" PointerMoved="DrawingCanvas_PointerMoved" PointerPressed="DrawingCanvas_PointerPressed"/>
                     </Grid>
                 </Border>
             </Viewbox>
+
+            <Border Background="#101D36" CornerRadius="6" Padding="10,5" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="20" BorderBrush="#2D3B55" BorderThickness="1">
+                <StackPanel>
+                    <TextBlock x:Name="CoordinateText" Text="X: 0px | Y: 0px" Foreground="#4DA6FF" FontSize="12" FontFamily="Consolas"/>
+                    <TextBlock Text="{Binding SystemStatus}" Foreground="#FFA726" FontSize="12" FontWeight="Bold" Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
 
         </Grid>
 
@@ -116,33 +121,33 @@
                                 <TextBlock Text="1. Piksel Noktalarını Seç:" Foreground="#94a3b8" FontSize="12" Margin="0,0,0,10"/>
                                 
                                 <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,*" Margin="0,0,0,15">
-                                    <Button Grid.Row="0" Grid.Column="0" Content="📍 X1 Noktası" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" Margin="0,0,4,8" CornerRadius="4"/>
-                                    <Button Grid.Row="0" Grid.Column="1" Content="📍 X2 Noktası" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" Margin="4,0,0,8" CornerRadius="4"/>
-                                    <Button Grid.Row="1" Grid.Column="0" Content="📍 Y1 Noktası" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" Margin="0,0,4,0" CornerRadius="4"/>
-                                    <Button Grid.Row="1" Grid.Column="1" Content="📍 Y2 Noktası" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" Margin="4,0,0,0" CornerRadius="4"/>
+                                    <Button Grid.Row="0" Grid.Column="0" Content="📍 X1 Noktası" Click="SelectX1_Click" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" Margin="0,0,4,8" CornerRadius="4"/>
+                                    <Button Grid.Row="0" Grid.Column="1" Content="📍 X2 Noktası" Click="SelectX2_Click" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" Margin="4,0,0,8" CornerRadius="4"/>
+                                    <Button Grid.Row="1" Grid.Column="0" Content="📍 Y1 Noktası" Click="SelectY1_Click" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" Margin="0,0,4,0" CornerRadius="4"/>
+                                    <Button Grid.Row="1" Grid.Column="1" Content="📍 Y2 Noktası" Click="SelectY2_Click" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" Margin="4,0,0,0" CornerRadius="4"/>
                                 </Grid>
                                 
                                 <TextBlock Text="2. Gerçek Değerleri Gir:" Foreground="#FFA726" FontSize="12" Margin="0,0,0,10"/>
                                 
                                 <Grid ColumnDefinitions="*, *" Margin="0,0,0,8">
                                     <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                                        <TextBlock Text="X1 Değeri:" FontSize="11" Foreground="#94a3b8" Margin="0,0,0,4"/>
-                                        <TextBox Text="0.0" Background="#101D36" Foreground="White" CornerRadius="4"/>
+                                        <TextBlock Text="X1 (Min):" FontSize="11" Foreground="#94a3b8" Margin="0,0,0,4"/>
+                                        <TextBox Text="{Binding RealXMin}" Background="#101D36" Foreground="White" CornerRadius="4"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                                        <TextBlock Text="X2 Değeri:" FontSize="11" Foreground="#94a3b8" Margin="0,0,0,4"/>
-                                        <TextBox Text="1.0" Background="#101D36" Foreground="White" CornerRadius="4"/>
+                                        <TextBlock Text="X2 (Max):" FontSize="11" Foreground="#94a3b8" Margin="0,0,0,4"/>
+                                        <TextBox Text="{Binding RealXMax}" Background="#101D36" Foreground="White" CornerRadius="4"/>
                                     </StackPanel>
                                 </Grid>
 
                                 <Grid ColumnDefinitions="*, *">
                                     <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                                        <TextBlock Text="Y1 Değeri:" FontSize="11" Foreground="#94a3b8" Margin="0,0,0,4"/>
-                                        <TextBox Text="0.0" Background="#101D36" Foreground="White" CornerRadius="4"/>
+                                        <TextBlock Text="Y1 (Min):" FontSize="11" Foreground="#94a3b8" Margin="0,0,0,4"/>
+                                        <TextBox Text="{Binding RealYMin}" Background="#101D36" Foreground="White" CornerRadius="4"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                                        <TextBlock Text="Y2 Değeri:" FontSize="11" Foreground="#94a3b8" Margin="0,0,0,4"/>
-                                        <TextBox Text="1.0" Background="#101D36" Foreground="White" CornerRadius="4"/>
+                                        <TextBlock Text="Y2 (Max):" FontSize="11" Foreground="#94a3b8" Margin="0,0,0,4"/>
+                                        <TextBox Text="{Binding RealYMax}" Background="#101D36" Foreground="White" CornerRadius="4"/>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -155,7 +160,7 @@
                                 <Border Background="#101D36" CornerRadius="6" Padding="12" Margin="0,0,0,15" BorderBrush="#2D3B55" BorderThickness="1">
                                     <StackPanel>
                                         <TextBlock Text="Aktif Grup: Z = 1.2" Foreground="#4DA6FF" FontSize="13" FontWeight="Bold" Margin="0,0,0,5"/>
-                                        <TextBlock Text="Toplam Toplanan Nokta: 42" Foreground="White" FontSize="12"/>
+                                        <TextBlock Text="Toplam Toplanan Nokta: 0" Foreground="White" FontSize="12"/>
                                     </StackPanel>
                                 </Border>
                                 

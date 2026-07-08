@@ -17,6 +17,7 @@ public partial class MainWindow : Window
     private string _activeCalibrationStep = ""; //hangi nokta secili
     private int _calibrationClicksCount = 0; // ==4 olunca kalibre edilebilecek
     private bool _isDrawModeActive=false;
+    private System.Collections.Generic.Dictionary<string, Ellipse> _calibrationMarkers = new();
     private Avalonia.Point _lastCollectedPoint = new Avalonia.Point(0, 0);
 
     public MainWindow()
@@ -43,7 +44,7 @@ public partial class MainWindow : Window
             if (DataContext is MainWindowViewModel vm)
             {
                 vm.GraphImage = bitmap;
-                vm.SystemStatus = "Grafik başarıyla yüklendi. Lütfen kalibrasyon adımlarına başlayınız.";
+                vm.SystemStatus = "Grafik yüklendi. Lütfen kalibrasyon adımlarına başlayınız.";
             }
         }
     }
@@ -51,8 +52,6 @@ public partial class MainWindow : Window
     public void SelectX1_Click(object? sender, RoutedEventArgs e) { SetCalibrationStep("X1", "📍 Resim üzerinde X1 (Min) noktasını tıklayarak seçin..."); }
     public void SelectX2_Click(object? sender, RoutedEventArgs e) { SetCalibrationStep("X2", "📍 Resim üzerinde X2 (Max) noktasını tıklayarak seçin..."); }
     public void SelectY1_Click(object? sender, RoutedEventArgs e) { SetCalibrationStep("Y1", "📍 Resim üzerinde Y1 (Min) noktasını tıklayarak seçin..."); }
-    
-   
     public void SelectY2_Click(object? sender, RoutedEventArgs e) { SetCalibrationStep("Y2", "📍 Resim üzerinde Y2 (Max) noktasını tıklayarak seçin..."); }
 
     private void SetCalibrationStep(string step, string message)
@@ -84,11 +83,24 @@ public partial class MainWindow : Window
                 case "Y2": vm.YMaxPixelY = point.Y; break;
             }
 
+            if (_calibrationMarkers.ContainsKey(_activeCalibrationStep))
+            {
+                DrawingCanvas.Children.Remove(_calibrationMarkers[_activeCalibrationStep]);
+            }
+            IBrush markerColor = _activeCalibrationStep switch
+            {
+                "X1" => Brushes.Cyan,      // Parlak Kırmızı
+                "X2" => Brushes.DarkOrange,   // Turuncu
+                "Y1" => Brushes.DodgerBlue,   // Canlı Mavi
+                "Y2" => Brushes.LimeGreen,    // Fıstık Yeşili
+                _    => Brushes.White
+            };
+
             var marker = new Ellipse
             {
                 Width = 10,
                 Height=10,
-                Fill = Brushes.Red,
+                Fill = markerColor,
                 Stroke=Brushes.White,
                 StrokeThickness=2
             };
@@ -96,9 +108,9 @@ public partial class MainWindow : Window
             Canvas.SetLeft(marker, point.X-5);
             Canvas.SetTop(marker, point.Y-5);
             DrawingCanvas.Children.Add(marker);
+            _calibrationMarkers[_activeCalibrationStep] = marker;
 
-
-            vm.SystemStatus = $"✅ {_activeCalibrationStep} Noktası Alındı ({point.X:F0}px, {point.Y:F0}px).";
+            vm.SystemStatus = $"✅ {_activeCalibrationStep} Noktası Güncellendi ({point.X:F0}px, {point.Y:F0}px).";
             _activeCalibrationStep = ""; // Seçimi sıfırla
             _calibrationClicksCount++;
 
@@ -130,13 +142,15 @@ public partial class MainWindow : Window
                 //oklid mesafesi
                 if (distance >= 5)
                 {
-                    var dataDot = new Ellipse{ Width = 4, Height = 4, Fill = Brushes.Cyan };
+                    var dataDot = new Ellipse{ Width = 4, Height = 4, Fill = Brushes.Red };
                     Canvas.SetLeft(dataDot, point.X - 2);
                     Canvas.SetTop(dataDot, point.Y - 2);
                     DrawingCanvas.Children.Add(dataDot);
 
                     // geçici noktayı güncelle
                     _lastCollectedPoint = point;
+                    Console.WriteLine($"Toplanan Nokta: X={realCoords.RealX}, Y={realCoords.RealY}");
+                
                 }
             }
         }
@@ -173,6 +187,31 @@ public partial class MainWindow : Window
         if (DataContext is MainWindowViewModel vm)
         {
             bool success = vm.TryCalibrate();
+        }
+    }
+
+    public void ResetButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            vm.RealXMin = 0.0;
+            vm.RealXMax = 0.0;
+            vm.RealYMin = 0.0;
+            vm.RealYMax = 0.0;
+            vm.MinPixelX = 0.0;
+            vm.MinPixelY = 0.0;
+            vm.XMaxPixelX = 0.0;
+            vm.YMaxPixelY = 0.0;
+
+            // 2. Ekranda çizilmiş olan tüm kırmızı kalibrasyon noktalarını ve mavi kalem çizgilerini temizle
+            DrawingCanvas.Children.Clear();
+            
+            // 3. Kod tarafındaki hafıza sayaçlarını temizle
+            _calibrationMarkers.Clear();
+            _calibrationClicksCount = 0;
+            _activeCalibrationStep = "";
+            
+            vm.SystemStatus = "🔄 Tüm kalibrasyon ve grafik verileri başarıyla sıfırlandı.";
         }
     }
 

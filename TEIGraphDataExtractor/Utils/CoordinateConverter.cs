@@ -1,4 +1,5 @@
 using System;
+using System.Dynamic;
 
 namespace TEIGraphDataExtractor.Utils
 {
@@ -8,74 +9,59 @@ namespace TEIGraphDataExtractor.Utils
     /// </summary>
     public class CoordinateConverter
     {
-        // Gerçek dünya sınır değerleri
-        public double RealXMin { get; private set; }
-        public double RealXMax { get; private set; }
-        public double RealYMin { get; private set; }
-        public double RealYMax { get; private set; }
+        public double RealX1 {get; private set; }
+        public double RealX2 {get; private set; }
+        public double RealY1 {get; private set; }
+        public double RealY2 {get; private set; }
 
-        // Ekranda tıklanan referans piksel koordinatları
-        public double MinPixelX { get; private set; }
-        public double MinPixelY { get; private set; }
-        public double XMaxPixelX { get; private set; }
-        public double YMaxPixelY { get; private set; }
+        public double X1PixelX {get; private set; }
+        public double X2PixelX {get; private set; }
+        public double Y1PixelY {get; private set; }
+        public double Y2PixelY {get; private set; }
 
-        // Kalibrasyonun başarıyla yapılıp yapılmadığını takip eden bayrak
-        public bool IsCalibrated { get; private set; } = false;
+        public bool IsCalibrated {get; private set; } = false;
 
-        // Dönüşüm katsayıları (Önceden hesaplanarak Stream Mode performansı artırılır)
         private double _scaleX;
         private double _scaleY;
 
-        /// <summary>
-        /// Kalibrasyon parametrelerini ayarlar ve dönüşüm katsayılarını hesaplar.
-        /// </summary>
         public void Calibrate(
-            double minPxX, double minPxY,
-            double xMaxPxX, double yMaxPxY,
-            double realXMin, double realXMax,
-            double realYMin, double realYMax)
+            double x1PxX, double x2PxX,
+            double y1PxY, double y2PxY,
+            double realX1, double realX2,
+            double realY1, double realY2)
         {
-            // 1. GÜVENLİK KONTROLÜ: Sıfıra Bölünme (Division by Zero) Engellemesi
-            // Eğer kullanıcı aynı piksele tıkladıysa veya fark çok küçükse (< 0.0001) hata fırlat
-            double pixelDeltaX = Math.Abs(xMaxPxX - minPxX);
-            double pixelDeltaY = Math.Abs(minPxY - yMaxPxY);
+            double pixelDeltaX = Math.Abs(x2PxX - x1PxX);
+            double pixelDeltaY = Math.Abs(y1PxY - y2PxY);
 
             if (pixelDeltaX < 0.0001 || pixelDeltaY < 0.0001)
             {
                 IsCalibrated = false;
-                throw new InvalidOperationException("Kalibrasyon noktaları birbirinden çok yakın veya aynı! Sıfıra bölünme hatası (Division by Zero) engellendi. Lütfen noktaları doğru seçin.");
+                throw new InvalidOperationException("Kalibrasyon noktaları birbirinden çok yakın veya aynı! Sıfıra bölünme hatası engellendi.");
             }
 
-            if (Math.Abs(realXMax - realXMin) < 0.0001 || Math.Abs(realYMax - realYMin) < 0.0001)
+            if (Math.Abs(realX2 - realX1) < 0.0001 || Math.Abs(realY2 - realY1) < 0.0001)
             {
                 IsCalibrated = false;
-                throw new ArgumentException("Gerçek eksen minimum ve maksimum değerleri aynı olamaz!");
+                throw new ArgumentException("Gerçek eksen referans değerleri (Örn: X1 ve X2) aynı olamaz!");
             }
 
-            // Değerleri ata
-            MinPixelX = minPxX;
-            MinPixelY = minPxY;
-            XMaxPixelX = xMaxPxX;
-            YMaxPixelY = yMaxPxY;
+            X1PixelX = x1PxX;
+            X2PixelX = x2PxX;
+            Y1PixelY = y1PxY;
+            Y2PixelY = y2PxY;
 
-            RealXMin = realXMin;
-            RealXMax = realXMax;
-            RealYMin = realYMin;
-            RealYMax = realYMax;
+            RealX1 = realX1;
+            RealX2 = realX2;
+            RealY1 = realY1;
+            RealY2 = realY2;
 
-            // 2. KATSAYI HESAPLAMA (Önceden hesaplayarak fare hareketinde işlem yükünü azaltıyoruz)
-            _scaleX = (RealXMax - RealXMin) / (XMaxPixelX - MinPixelX);
-            
-            // Ekran Y koordinatları aşağı doğru arttığı için (OriginPixelY > YMaxPixelY) olur.
-            _scaleY = (RealYMax - RealYMin) / (MinPixelY - YMaxPixelY);
+            _scaleX = (RealX2 - RealX1) / (X2PixelX - X1PixelX);
+
+            _scaleY = (RealY2 - RealY1) / (Y1PixelY - Y2PixelY);
 
             IsCalibrated = true;
         }
 
-        /// <summary>
-        /// Ekrandan gelen piksel (X, Y) noktasını gerçek dünya değerlerine dönüştürür.
-        /// </summary>
         public (double RealX, double RealY) PixelToRealWorld(double pixelX, double pixelY)
         {
             if (!IsCalibrated)
@@ -83,13 +69,9 @@ namespace TEIGraphDataExtractor.Utils
                 throw new InvalidOperationException("Kalibrasyon yapılmadan koordinat dönüşümü gerçekleştirilemez!");
             }
 
-            // X Dönüşümü: Orijinden ne kadar sağa gidildiği * ölçek
-            double realX = RealXMin + (pixelX - MinPixelX) * _scaleX;
+            double realX = RealX1 + (pixelX - X1PixelX) * _scaleX;
+            double realY = RealY1 + (Y1PixelY - pixelY) * _scaleY;
 
-            // Y Dönüşümü: Orijinden ne kadar yukarı gidildiği (Ekran tersliği sebebiyle OriginY - pixelY) * ölçek
-            double realY = RealYMin + (MinPixelY - pixelY) * _scaleY;
-
-            // Math.Round ile virgüllü sayı hatalarını (Floating point precision) sınırlayabiliriz (Örn: 4 basamak)
             return (Math.Round(realX, 4), Math.Round(realY, 4));
         }
     }

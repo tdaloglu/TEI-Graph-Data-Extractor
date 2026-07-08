@@ -10,16 +10,17 @@ namespace TEIGraphDataExtractor.ViewModels
     {
         private readonly CoordinateConverter _coordinateConverter;
 
-        public double InputRealXMin {get; set; } = 0.0;
-        public double InputRealXMax {get; set; } = 500.0;
-        public double InputRealYMin {get; set; } = 0.0;
-        public double InputRealYMax {get; set; } = 300.0;
+        public double InputRealX1 {get; set; } = 0.0;
+        public double InputRealX2 {get; set; } = 1.0;
+        public double InputRealY1 {get; set; } = 0.0;
+        public double InputRealY2 {get; set; } = 1.0;
 
-        private (double X, double Y) _minPixel;
-        private (double X, double Y) _xMaxPixel;
-        private (double X, double Y) _yMaxPixel;
+        private (double X, double Y)? _x1Pixel;
+        private (double X, double Y)? _x2Pixel;
+        private (double X, double Y)? _y1Pixel;
+        private (double X, double Y)? _y2Pixel;
 
-        private CalibrationStep _currentStep = CalibrationStep.WaitingForXMinYMin;
+        private CalibrationStep _currentStep = CalibrationStep.WaitingForX1;
         public CalibrationStep CurrentStep
         {
             get => _currentStep;
@@ -33,10 +34,11 @@ namespace TEIGraphDataExtractor.ViewModels
 
         public string StatusMessage => CurrentStep switch
         {
-            CalibrationStep.WaitingForXMinYMin => "📍 Lütfen eksenlerin başladığı sol alt kesişim noktasına (X-Min, Y-Min) tıklayın.",
-            CalibrationStep.WaitingForXMax => "➡️ Lütfen X Ekseninin bittiği en sağ noktaya (X-Max) tıklayın.",
-            CalibrationStep.WaitingForYMax => "⬆️ Lütfen Y Ekseninin bittiği en üst noktaya (Y-Max) tıklayın.",
-            CalibrationStep.Completed => "✅ Kalibrasyon Başarılı! Artık kontur çizimlerine (Stream Mode) başlayabilirsiniz.",
+            CalibrationStep.WaitingForX1 => "📍 Lütfen X1 referans noktasına tıklayın (Örn: X ekseninin başlangıcı).",
+            CalibrationStep.WaitingForX2 => "➡️ Lütfen X2 referans noktasına tıklayın (Örn: X ekseninin bitişi).",
+            CalibrationStep.WaitingForY1 => "📍 Lütfen Y1 referans noktasına tıklayın (Örn: Y ekseninin başlangıcı/altı).",
+            CalibrationStep.WaitingForY2 => "⬆️ Lütfen Y2 referans noktasına tıklayın (Örn: Y ekseninin bitişi/üstü).",
+            CalibrationStep.Completed => "✅ Kalibrasyon Başarılı! Artık 'Kalem (Seri Çizim)' ile tarama yapabilirsiniz.",
             _ => "Hazır."
         };
 
@@ -45,28 +47,41 @@ namespace TEIGraphDataExtractor.ViewModels
             _coordinateConverter = coordinateConverter;
         }
 
+        public void SelectCalibrationPoint(CalibrationStep step)
+        {
+            CurrentStep = step;
+        }
+
         public void ProcessPixelClick(double pixelX, double pixelY)
         {
             switch (CurrentStep)
             {
-                case CalibrationStep.WaitingForXMinYMin:
-                    _minPixel = (pixelX, pixelY);
-                    CurrentStep = CalibrationStep.WaitingForXMax;
+                case CalibrationStep.WaitingForX1:
+                    _x1Pixel = (pixelX, pixelY);
+                    CurrentStep = CalibrationStep.WaitingForX2;
                     break;
                 
-                case CalibrationStep.WaitingForXMax:
-                    _xMaxPixel = (pixelX, pixelY);
-                    CurrentStep = CalibrationStep.WaitingForYMax;
+                case CalibrationStep.WaitingForX2:
+                    _x2Pixel = (pixelX, pixelY);
+                    CurrentStep = CalibrationStep.WaitingForY1;
                     break;
                 
-                case CalibrationStep.WaitingForYMax:
-                    _yMaxPixel = (pixelX, pixelY);
-
-                    ExecuteCalibration();
+                case CalibrationStep.WaitingForY1:
+                    _y1Pixel = (pixelX, pixelY);
+                    CurrentStep = CalibrationStep.WaitingForY2;
+                    break;
+                
+                case CalibrationStep.WaitingForY2:
+                    _y2Pixel = (pixelX, pixelY);
                     break;
                 
                 case CalibrationStep.Completed:
                     break;
+            }
+
+            if (_x1Pixel.HasValue && _x2Pixel.HasValue && _y1Pixel.HasValue && _y2Pixel.HasValue)
+            {
+                ExecuteCalibration();
             }
         }
 
@@ -75,10 +90,10 @@ namespace TEIGraphDataExtractor.ViewModels
             try
             {
                 _coordinateConverter.Calibrate(
-                    minPxX: _minPixel.X, minPxY: _minPixel.Y,
-                    xMaxPxX: _xMaxPixel.X, yMaxPxY: _yMaxPixel.Y,
-                    realXMin: InputRealXMin, realXMax: InputRealXMax,
-                    realYMin: InputRealYMin, realYMax: InputRealYMax
+                    x1PxX: _x1Pixel!.Value.X, x2PxX: _x2Pixel!.Value.X,
+                    y1PxY: _y1Pixel!.Value.Y, y2PxY: _y2Pixel!.Value.Y,
+                    realX1: InputRealX1, realX2: InputRealX2,
+                    realY1: InputRealY1, realY2: InputRealY2
                 );
 
                 CurrentStep = CalibrationStep.Completed;
@@ -92,7 +107,11 @@ namespace TEIGraphDataExtractor.ViewModels
 
         public void ResetCalibration()
         {
-            CurrentStep = CalibrationStep.WaitingForXMinYMin;
+            _x1Pixel = null;
+            _x2Pixel = null;
+            _y1Pixel = null;
+            _y2Pixel = null;
+            CurrentStep = CalibrationStep.WaitingForX1;
         }
 
         public (double RealX, double RealY)? GetRealCoordinates(double pixelX, double pixelY)

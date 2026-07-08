@@ -13,6 +13,7 @@ namespace TEIGraphDataExtractor.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
 {
    public CoordinateConverter Converter { get; } = new CoordinateConverter();
+   private readonly GraphDataService _graphDataService = new GraphDataService();
    private string _systemStatus = "✅ Sistem Hazır (Kalibrasyon Bekleniyor)";
    public string SystemStatus
     {
@@ -92,9 +93,25 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    public void StartDrawingStroke()
+    {
+        _graphDataService.BeginNewStroke();
+    }
+
+    public void EndDrawingStroke()
+    {
+        _graphDataService.EndCurrentStroke();
+
+        SaveBatchToDatabase();
+    }
+
     public DataPoint? CaptureStreamPoint(double pixelX, double pixelY)
     {
-        if (!Converter.IsCalibrated) return null;
+        if (!Converter.IsCalibrated)
+        {
+            Console.WriteLine("[UYARI] Çizim yapılmaya çalışıldı ama sistem henüz KALİBRE EDİLMEMİŞ!");
+            return null;
+        }
 
         try
         {
@@ -109,7 +126,9 @@ public partial class MainWindowViewModel : ViewModelBase
                 OrderIndex = _currentOrderIndex++
             };
 
-            LiveDataPoints.Add(newPoint);
+            _graphDataService.RegisterPoint(newPoint, LiveDataPoints);
+
+            Console.WriteLine($"[NOKTA YAKALANDI] #{newPoint.OrderIndex} -> X: {newPoint.XValue}, Y: {newPoint.YValue}");
 
             return newPoint;
         }
@@ -131,6 +150,8 @@ public partial class MainWindowViewModel : ViewModelBase
             context.DataPoints.AddRange(LiveDataPoints);
             int savedCount = context.SaveChanges();
 
+            _graphDataService.ClearHistory();
+
             SystemStatus = SystemStatus = $"💾 Başarılı: {savedCount} nokta veritabanına arşivlendi!";
         }
         catch (Exception ex)
@@ -139,9 +160,22 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    public void UndoLastCurve()
+    {
+        bool success = _graphDataService.UndoLastStroke(LiveDataPoints);
+        if (success)
+        {
+            SystemStatus = "↩️ Son çizilen eğri başarıyla geri alındı.";
+        } else
+        {
+            SystemStatus = "ℹ️ Geri alınacak geçici çizim geçmişi bulunmuyor.";
+        }
+    }
+
     public void ClearStreamData()
     {
         LiveDataPoints.Clear();
+        _graphDataService.ClearHistory();
         _currentOrderIndex = 1;
         SystemStatus = "🧹 Ekran ve geçici hafıza temizlendi.";
     }

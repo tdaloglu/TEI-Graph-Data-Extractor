@@ -20,8 +20,13 @@ public partial class MainWindowViewModel : ViewModelBase
     public Bitmap? GraphImage
     {
         get => _graphImage;
-        set { _graphImage = value; RaisePropertyChanged(); }
+        set { 
+            _graphImage = value; 
+            RaisePropertyChanged(); 
+            RaisePropertyChanged(nameof(IsImageLoaded));
+            }
     }
+    public bool IsImageLoaded => GraphImage != null;
     private int _groupCount = 1;
     public int GroupCount
     {

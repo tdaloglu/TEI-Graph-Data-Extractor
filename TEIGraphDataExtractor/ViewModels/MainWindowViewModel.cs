@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using Avalonia.Media.Imaging;
+using TEIGraphDataExtractor.Models;
 using TEIGraphDataExtractor.Services;
 using TEIGraphDataExtractor.Utils;
+using TEIGraphDataExtractor.Services.Database;
+using Avalonia.Diagnostics;
 
 
 namespace TEIGraphDataExtractor.ViewModels;
@@ -49,6 +53,24 @@ public partial class MainWindowViewModel : ViewModelBase
 
     //artık tüm noktalar secildiginde asagıdaki satırlar calısır
 
+    private double _activeZValue = 0.8;
+    public double ActiveZValue
+    {
+        get => _activeZValue;
+        set {_activeZValue = value; RaisePropertyChanged(); }
+    }
+
+    private int _currentGraphId = 1;
+    public int CurrentGraphId
+    {
+        get => _currentGraphId;
+        set {_currentGraphId = value; RaisePropertyChanged(); }
+    }
+
+    public ObservableCollection<DataPoint> LiveDataPoints {get; } = new ObservableCollection<DataPoint>();
+
+    public int _currentOrderIndex = 1;
+
     public bool TryCalibrate()
     {
         try
@@ -65,6 +87,57 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    public DataPoint? CaptureStreamPoint(double pixelX, double pixelY)
+    {
+        if (!Converter.IsCalibrated) return null;
 
+        try
+        {
+            var realCoord = Converter.PixelToRealWorld(pixelX, pixelY);
 
+            var newPoint = new DataPoint
+            {
+                GraphId = CurrentGraphId,
+                XValue = realCoord.RealX,
+                YValue = realCoord.RealY,
+                ZValue = ActiveZValue,
+                OrderIndex = _currentOrderIndex++
+            };
+
+            LiveDataPoints.Add(newPoint);
+
+            return newPoint;
+        }
+        catch (Exception ex)
+        {
+            SystemStatus = $"⚠️ Tarama Hatası: {ex.Message}";
+            return null;
+        }
+    }
+
+    public void SaveBatchToDatabase()
+    {
+        if (LiveDataPoints.Count == 0) return;
+
+        try
+        {
+            using var context = new AppDbContext();
+
+            context.DataPoints.AddRange(LiveDataPoints);
+            int savedCount = context.SaveChanges();
+
+            SystemStatus = SystemStatus = $"💾 Başarılı: {savedCount} nokta veritabanına arşivlendi!";
+        }
+        catch (Exception ex)
+        {
+            SystemStatus = $"⚠️ Veritabanı Kayıt Hatası: {ex.Message}";
+        }
+    }
+
+    public void ClearStreamData()
+    {
+        LiveDataPoints.Clear();
+        _currentOrderIndex = 1;
+        SystemStatus = "🧹 Ekran ve geçici hafıza temizlendi.";
+    }
 }

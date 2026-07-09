@@ -77,11 +77,24 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public int _currentOrderIndex = 1;
 
-    private DataPoint? _selectedDataPoint;
-    public DataPoint? SelectedDataPoint
+    private bool _isDeleteModeActive = false;
+    public bool IsDeleteModeActive
     {
-        get => _selectedDataPoint;
-        set {_selectedDataPoint = value; RaisePropertyChanged(); }
+        get => _isDeleteModeActive;
+        set
+        {
+            _isDeleteModeActive = value;
+            RaisePropertyChanged();
+
+            SystemStatus = value 
+                ? "🎯 SİLME MODU AKTİF: Silmek istediğiniz noktanın üzerine tıklayın." 
+                : "✏️ ÇİZİM MODU: Farenizle tarama yapabilirsiniz.";
+        }
+    }
+
+    public void ToggleDeleteMode()
+    {
+        IsDeleteModeActive = !IsDeleteModeActive;
     }
 
     public bool TryCalibrate()
@@ -216,15 +229,35 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    public void DeleteSelectedPoint()
+    public bool TryDeletePointAtPixel(double clickPixelX, double clickPixelY, double hitTolerancePixels = 15.0)
     {
-        if (SelectedDataPoint != null)
+        if (LiveDataPoints.Count == 0) return false;
+
+        DataPoint? closestPoint = null;
+        double minDistance = double.MaxValue;
+
+        foreach(var point in LiveDataPoints)
         {
-            DeletePoint(SelectedDataPoint);
-            SelectedDataPoint = null;
-        } else
-        {
-            SystemStatus = "ℹ️ Lütfen silmek için önce tablodan bir nokta seçin.";
+            var ptPixel = Converter.RealWorldToPixel(point.XValue, point.YValue);
+
+            double dx = ptPixel.PixelX - clickPixelX;
+            double dy = ptPixel.PixelY - clickPixelY;
+            double distance = Math.Sqrt(dx*dx + dy*dy);
+
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                closestPoint = point;
+            }
         }
+
+        if (closestPoint != null && minDistance <= hitTolerancePixels)
+        {
+            DeletePoint(closestPoint);
+            return true;
+        }
+
+        SystemStatus = "ℹ️ Tıkladığınız yerde silinecek bir nokta bulunamadı (Çok uzaksınız).";
+        return false;
     }
 }

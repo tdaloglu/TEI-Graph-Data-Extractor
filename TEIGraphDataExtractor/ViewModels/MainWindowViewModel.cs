@@ -77,6 +77,13 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public int _currentOrderIndex = 1;
 
+    private DataPoint? _selectedDataPoint;
+    public DataPoint? SelectedDataPoint
+    {
+        get => _selectedDataPoint;
+        set {_selectedDataPoint = value; RaisePropertyChanged(); }
+    }
+
     public bool TryCalibrate()
     {
         try
@@ -178,5 +185,46 @@ public partial class MainWindowViewModel : ViewModelBase
         _graphDataService.ClearHistory();
         _currentOrderIndex = 1;
         SystemStatus = "🧹 Ekran ve geçici hafıza temizlendi.";
+    }
+
+    public void DeletePoint(DataPoint? pointToDelete)
+    {
+        if (pointToDelete == null) return;
+
+        if (LiveDataPoints.Contains(pointToDelete))
+        {
+            LiveDataPoints.Remove(pointToDelete);
+        }
+
+        if (pointToDelete.DataPointId > 0)
+        {
+            try
+            {
+                using var context = new AppDbContext();
+                context.DataPoints.Remove(pointToDelete);
+                context.SaveChanges();
+
+                SystemStatus = $"🗑️ Nokta #{pointToDelete.OrderIndex} veritabanından ve ekrandan silindi.";
+            }
+            catch (Exception ex)
+            {
+                SystemStatus = $"⚠️ Veritabanı Silme Hatası: {ex.Message}";
+            }
+        } else
+        {
+            SystemStatus = $"🗑️ Nokta #{pointToDelete.OrderIndex} ekrandan silindi (Henüz DB'ye kaydolmamıştı).";
+        }
+    }
+
+    public void DeleteSelectedPoint()
+    {
+        if (SelectedDataPoint != null)
+        {
+            DeletePoint(SelectedDataPoint);
+            SelectedDataPoint = null;
+        } else
+        {
+            SystemStatus = "ℹ️ Lütfen silmek için önce tablodan bir nokta seçin.";
+        }
     }
 }

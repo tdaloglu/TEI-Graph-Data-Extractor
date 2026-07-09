@@ -217,6 +217,132 @@ public partial class MainWindow : Window
         {
             CoordinateText.Text = $"Piksel X: {point.X:F0}px | Piksel Y: {point.Y:F0}px";
         }
+
+    // ==========================================
+    // 🔍 BÜYÜTEÇ MOTORU (CROP TABANLI - SAĞLAM YÖNTEM)
+    // ==========================================
+    // [YENİ YAKLAŞIM]: Transform/Scale/Translate matematiği Viewbox ve zoom
+    // butonlarıyla birlikte güvenilmez sonuç verdiği için tamamen terk edildi.
+    // Bunun yerine kaynak resimden farenin GERÇEK piksel konumunu merkez alan
+    // küçük bir dikdörtgen KESİYORUZ (CroppedBitmap) ve doğrudan büyüteç
+    // kutusuna basıyoruz. Böylece herhangi bir Transform/Viewbox/Scroll
+    // hesaplama hatası büyüteç sonucunu etkileyemez.
+    var magnifierImage = this.FindControl<Image>("MagnifierImage");
+    var magnifierGrid = this.FindControl<Grid>("MagnifierGrid");
+
+    if (DataContext is MainWindowViewModel vmMag &&
+        magnifierImage != null && magnifierGrid != null &&
+        DrawingCanvas.Bounds.Width > 0 && DrawingCanvas.Bounds.Height > 0 &&
+        vmMag.GraphImage != null && magnifierGrid.Bounds.Width > 0 && magnifierGrid.Bounds.Height > 0)
+    {
+        double imgPixelW = vmMag.GraphImage.PixelSize.Width;
+        double imgPixelH = vmMag.GraphImage.PixelSize.Height;
+
+        double boxW = DrawingCanvas.Bounds.Width;   // Ana görüntü kutusunun genişliği (örn. 800)
+        double boxH = DrawingCanvas.Bounds.Height;  // Ana görüntü kutusunun yüksekliği (örn. 600)
+
+        // 1. Stretch="Uniform" resmi kutunun İÇİNDE hangi boyutta ve hangi
+        //    ofsetle (letterbox boşluğuyla) çizdiğini hesapla
+        double uniformScale = Math.Min(boxW / imgPixelW, boxH / imgPixelH);
+        double renderedW = imgPixelW * uniformScale;
+        double renderedH = imgPixelH * uniformScale;
+        double offsetX = (boxW - renderedW) / 2.0;
+        double offsetY = (boxH - renderedH) / 2.0;
+
+        // 2. Farenin GERÇEK RESMİN İÇİNDEKİ yüzdesi (0.0 - 1.0)
+        double percentX = (point.X - offsetX) / renderedW;
+        double percentY = (point.Y - offsetY) / renderedH;
+        percentX = Math.Clamp(percentX, 0.0, 1.0);
+        percentY = Math.Clamp(percentY, 0.0, 1.0);
+
+        // 3. Bu yüzdeyi KAYNAK BİTMAP'İN GERÇEK PİKSEL koordinatına çevir
+        double imagePixelX = percentX * imgPixelW;
+        double imagePixelY = percentY * imgPixelH;
+
+        // 4. Büyüteç kutusunun etrafında ne kadar alan göstereceğimizi belirle.
+        //    zoomFactor = "1 kaynak pikseli, büyüteçte kaç piksel olarak görünsün?"
+        const double zoomFactor = 4.0;
+        double cropW = magnifierGrid.Bounds.Width / zoomFactor;
+        double cropH = magnifierGrid.Bounds.Height / zoomFactor;
+
+        // Kırpma alanı resmin sınırlarını taşmasın
+        cropW = Math.Min(cropW, imgPixelW);
+        cropH = Math.Min(cropH, imgPixelH);
+
+        double left = imagePixelX - (cropW / 2.0);
+        double top = imagePixelY - (cropH / 2.0);
+        left = Math.Clamp(left, 0, Math.Max(0, imgPixelW - cropW));
+        top = Math.Clamp(top, 0, Math.Max(0, imgPixelH - cropH));
+
+        int cropX = (int)Math.Round(left);
+        int cropY = (int)Math.Round(top);
+        int cropWidth = (int)Math.Round(cropW);
+        int cropHeight = (int)Math.Round(cropH);
+
+        // Güvenlik: sıfır veya negatif boyutta kırpma yapmaya çalışma
+        if (cropWidth > 0 && cropHeight > 0 &&
+            cropX + cropWidth <= imgPixelW && cropY + cropHeight <= imgPixelH)
+        {
+            var sourceRect = new Avalonia.PixelRect(cropX, cropY, cropWidth, cropHeight);
+            magnifierImage.Source = new CroppedBitmap(vmMag.GraphImage, sourceRect);
+
+            // ==========================================
+            // 🔴 KIRMIZI NOKTALARI / KALİBRASYON İŞARETLERİNİ DE BÜYÜTEÇTE GÖSTER
+            // ==========================================
+            // [YENİ]: Büyüteç şimdiye kadar sadece resmi gösteriyordu, üstüne çizdiğin
+            // noktaları (Ellipse'ler DrawingCanvas'ın çocukları) göstermiyordu.
+            // Burada: kırpma alanının (cropX,cropY,cropWidth,cropHeight) canvas-piksel
+            // karşılığını buluyoruz, o alanın içine düşen her noktayı küçültülmüş
+            // boyutta MagnifierOverlayCanvas üzerine yeniden çiziyoruz.
+
+            var overlayCanvas = this.FindControl<Canvas>("MagnifierOverlayCanvas");
+            if (overlayCanvas != null)
+            {
+                overlayCanvas.Children.Clear();
+
+                // Kırpma alanının (image-piksel) canvas-piksel (0-800/0-600) karşılığı
+                double cropCanvasLeft = offsetX + (cropX * uniformScale);
+                double cropCanvasTop = offsetY + (cropY * uniformScale);
+                double cropCanvasWidth = cropWidth * uniformScale;
+                double cropCanvasHeight = cropHeight * uniformScale;
+
+                // 1 canvas-pikseli, büyüteç panelinde kaç piksele denk geliyor?
+                double overlayScale = zoomFactor / uniformScale;
+
+                foreach (var child in DrawingCanvas.Children)
+                {
+                    if (child is not Ellipse dot) continue;
+
+                    double dotCenterX = Canvas.GetLeft(dot) + (dot.Width / 2);
+                    double dotCenterY = Canvas.GetTop(dot) + (dot.Height / 2);
+
+                    bool isInsideCrop =
+                        dotCenterX >= cropCanvasLeft && dotCenterX <= cropCanvasLeft + cropCanvasWidth &&
+                        dotCenterY >= cropCanvasTop && dotCenterY <= cropCanvasTop + cropCanvasHeight;
+
+                    if (!isInsideCrop) continue;
+
+                    double panelX = (dotCenterX - cropCanvasLeft) * overlayScale;
+                    double panelY = (dotCenterY - cropCanvasTop) * overlayScale;
+                    double miniWidth = Math.Max(2, dot.Width * overlayScale);
+                    double miniHeight = Math.Max(2, dot.Height * overlayScale);
+
+                    var miniDot = new Ellipse
+                    {
+                        Width = miniWidth,
+                        Height = miniHeight,
+                        Fill = dot.Fill,
+                        Stroke = dot.Stroke,
+                        StrokeThickness = dot.StrokeThickness
+                    };
+                    Canvas.SetLeft(miniDot, panelX - (miniWidth / 2));
+                    Canvas.SetTop(miniDot, panelY - (miniHeight / 2));
+                    overlayCanvas.Children.Add(miniDot);
+                }
+            }
+        }
+    }
+
     }
 
     public void DrawModeButton_Click(object? sender, RoutedEventArgs e)
@@ -355,4 +481,30 @@ public partial class MainWindow : Window
             vm.SystemStatus = $"🧹 Tüm veri noktaları temizlendi. Sayaç başa alındı! (Mevcut Nokta: {vm.LiveDataPoints.Count})";
         }
     }
+    public void ZoomInButton_Click(object? sender, RoutedEventArgs e)
+    {
+        // 🚀 KURŞUN GEÇİRMEZ YÖNTEM: "Git XAML içinden MainZoomGrid'i zorla bul!"
+        var mainZoomGrid = this.FindControl<Grid>("MainZoomGrid");
+        
+        if (mainZoomGrid?.RenderTransform is ScaleTransform scale)
+        {
+            scale.ScaleX += 0.2; 
+            scale.ScaleY += 0.2;
+        }
+    }
+
+    public void ZoomOutButton_Click(object? sender, RoutedEventArgs e)
+    {
+        var mainZoomGrid = this.FindControl<Grid>("MainZoomGrid");
+
+        if (mainZoomGrid?.RenderTransform is ScaleTransform scale)
+        {
+            if (scale.ScaleX > 0.4) 
+            {
+                scale.ScaleX -= 0.2; 
+                scale.ScaleY -= 0.2;
+            }
+        }
+    }
+    
 }

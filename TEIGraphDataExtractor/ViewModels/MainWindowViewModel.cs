@@ -5,7 +5,9 @@ using TEIGraphDataExtractor.Models;
 using TEIGraphDataExtractor.Services;
 using TEIGraphDataExtractor.Utils;
 using TEIGraphDataExtractor.Services.Database;
+using TEIGraphDataExtractor.Services.Export;
 using Avalonia.Diagnostics;
+using System.IO;
 
 
 namespace TEIGraphDataExtractor.ViewModels;
@@ -123,6 +125,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _graphDataService.EndCurrentStroke();
 
         SaveBatchToDatabase();
+
     }
 
     public DataPoint? CaptureStreamPoint(double pixelX, double pixelY)
@@ -202,11 +205,19 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public void DeletePoint(DataPoint? pointToDelete)
     {
-        if (pointToDelete == null) return;
+        if (pointToDelete == null)
+        {
+            Console.WriteLine("[UYARI] Silinmek istenen nokta boş (NULL) geldi!");
+            return;
+        }
 
         if (LiveDataPoints.Contains(pointToDelete))
         {
             LiveDataPoints.Remove(pointToDelete);
+            Console.WriteLine($"[NOKTA SİLİNDİ - RAM TEMİZLENDİ] 🗑️ RAM'de Kalan Nokta Sayısı: {LiveDataPoints.Count}");
+        } else
+        {
+            Console.WriteLine($"[UYARI] Nokta #{pointToDelete.OrderIndex} zaten RAM listesinde bulunamadı!");
         }
 
         if (pointToDelete.DataPointId > 0)
@@ -218,10 +229,12 @@ public partial class MainWindowViewModel : ViewModelBase
                 context.SaveChanges();
 
                 SystemStatus = $"🗑️ Nokta #{pointToDelete.OrderIndex} veritabanından ve ekrandan silindi.";
+                Console.WriteLine($"[💾 VERİTABANINDAN SİLİNDİ] ID: {pointToDelete.DataPointId}");
             }
             catch (Exception ex)
             {
                 SystemStatus = $"⚠️ Veritabanı Silme Hatası: {ex.Message}";
+                Console.WriteLine($"[❌ DB SİLME HATASI]: {ex.Message}");
             }
         } else
         {
@@ -260,6 +273,37 @@ public partial class MainWindowViewModel : ViewModelBase
         } 
 
         return false;
+    }
 
+    public void ExportToCsv(string? customFilePath = null)
+    {
+        if (LiveDataPoints.Count == 0)
+        {
+            SystemStatus = "⚠️ Dışa aktarılacak veri yok! Lütfen önce çizim yapın.";
+            Console.WriteLine("[UYARI] Dışa aktarılacak nokta bulunamadı.");
+            return;
+        }
+
+        try
+        {
+            IExportStrategy exportStrategy = new CsvExportStrategy();
+
+            string targetPath = customFilePath ?? Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                $"TEI_Grafik_Verisi_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+            );
+
+            bool success = exportStrategy.Export(LiveDataPoints, targetPath);
+
+            if (success)
+            {
+                SystemStatus = $"📊 Başarılı: CSV dosyası oluşturuldu -> {Path.GetFileName(targetPath)}";
+                Console.WriteLine($"[🔥 BAŞARILI DIŞA AKTARMA] Dosya Yolu: {targetPath}");
+            }
+        } catch (Exception ex)
+        {
+            SystemStatus = $"⚠️ CSV İndirme Hatası: {ex.Message}";
+            Console.WriteLine($"[❌ EXPORT HATASI]: {ex.Message}");
+        }
     }
 }

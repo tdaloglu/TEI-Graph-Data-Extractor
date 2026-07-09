@@ -35,7 +35,6 @@
                         <Button Content="➕ Ekle" Click="AddPointButton_Click" Background="#2D3B55" Foreground="White" Margin="0,0,4,4" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
                         <Button Content="🖐️ Taşı/Düzenle" Background="#2D3B55" Foreground="White" Margin="4,0,0,4" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
                         <Button Content="Geri al" Click="TekDeletePointButton_Click" Background="#2D3B55" Foreground="White" Margin="0,4,4,0" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
-                        <Button Content="🧹 İleri al" Click="ClearAllPointsButton_Click" Background="#2D3B55" Foreground="White" Margin="4,4,0,0" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
                         <Button Content="🧹 Tümünü Temizle" Click="ClearAllPointsButton_Click" Background="#2D3B55" Foreground="White" Margin="4,4,0,0" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
                         <Button Content="🧹 Sil" Click="DeletePointButton_Click" Background="#2D3B55" Foreground="White" Margin="4,4,0,0" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
                         
@@ -53,7 +52,7 @@
                     <Border Background="#0b1120" CornerRadius="6" Padding="8" Margin="0,0,0,8">
                         <Grid ColumnDefinitions="Auto, *, Auto">
                             <Ellipse Width="12" Height="12" Fill="#FF4D4D" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                            <TextBox Grid.Column="1" Text="Z = 0.8" Background="Transparent" Foreground="White" BorderThickness="0" VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1" Text="{Binding ActiveZValue, Mode=TwoWay}" Background="Transparent" Foreground="White" BorderThickness="0" VerticalAlignment="Center"/>
                             <Button Grid.Column="2" Content="Seç" FontSize="11" Padding="12,5" Background="#2D3B55" Foreground="White" CornerRadius="4"/>
                         </Grid>
                     </Border>
@@ -200,17 +199,34 @@
 
                     <TabItem Header="💾 ÇIKTI &amp; VERİ">
                         <Border Background="#070b14" BorderBrush="#2D3B55" BorderThickness="1" CornerRadius="0,8,8,8" Padding="15" Margin="0,5,0,0">
-                            <StackPanel>
-                                <Border Background="#101D36" CornerRadius="6" Padding="12" Margin="0,0,0,15" BorderBrush="#2D3B55" BorderThickness="1">
+                            <DockPanel>
+                                <Border DockPanel.Dock="Top" Background="#101D36" CornerRadius="6" Padding="12" Margin="0,0,0,10" BorderBrush="#2D3B55" BorderThickness="1">
                                     <StackPanel>
-                                        <TextBlock Text="Aktif Grup: Z = 1.2" Foreground="#4DA6FF" FontSize="13" FontWeight="Bold" Margin="0,0,0,5"/>
-                                        <TextBlock Text="Toplam Toplanan Nokta: 0" Foreground="White" FontSize="12"/>
+                                        <TextBlock Text="{Binding ActiveZValue, StringFormat='Aktif Grup: Z = {0}'}" Foreground="#4DA6FF" FontSize="13" FontWeight="Bold" Margin="0,0,0,5"/>
+                                        <TextBlock Text="{Binding LiveDataPoints.Count, StringFormat='Toplam Toplanan Nokta: {0}'}" Foreground="White" FontSize="12"/>
                                     </StackPanel>
                                 </Border>
-                                
-                                <Button Content="💾 DB'ye Yaz (SQLite)" Background="#4DA6FF" Foreground="White" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,0,10" Padding="0,12" CornerRadius="4" FontSize="13" FontWeight="Bold"/>
-                                <Button Content="📄 CSV Olarak İndir" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,12" CornerRadius="4" FontSize="13"/>
-                            </StackPanel>
+
+                                <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+                                    <Button Content="📄 CSV Olarak İndir" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,10" CornerRadius="4" FontSize="13"/>
+                                </StackPanel>
+
+                                <DataGrid ItemsSource="{Binding LiveDataPoints}"
+                                          AutoGenerateColumns="False"
+                                          CanUserSortColumns="True"
+                                          GridLinesVisibility="All"
+                                          BorderThickness="1"
+                                          BorderBrush="#2D3B55"
+                                          Background="#0b1120"
+                                          Margin="0,5">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="#" Binding="{Binding OrderIndex}" Width="35"/>
+                                        <DataGridTextColumn Header="X Değeri" Binding="{Binding XValue, StringFormat={}{0:F3}}" Width="*"/>
+                                        <DataGridTextColumn Header="Y Değeri" Binding="{Binding YValue, StringFormat={}{0:F3}}" Width="*"/>
+                                        <DataGridTextColumn Header="Z" Binding="{Binding ZValue, StringFormat={}{0:F1}}" Width="50"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </DockPanel>
                         </Border>
                     </TabItem>
                     

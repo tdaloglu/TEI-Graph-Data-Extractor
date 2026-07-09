@@ -8,7 +8,6 @@ using Avalonia.Media.Imaging;
 using System;
 using TEIGraphDataExtractor.ViewModels;
 using TEIGraphDataExtractor.Services.Export;
-using TEIGraphDataExtractor.Views;
 
 namespace TEIGraphDataExtractor.Views;
 

@@ -277,7 +277,7 @@ public partial class MainWindow : Window
     // ====================================================================
     // [2. ÖZELLİK + FULL ENTEGRE]: HEM GERİ AL (UNDO) HEM SEÇEREK SİL (AVCI MODU)
     // ====================================================================
-    public void DeletePointButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    public void TekDeletePointButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (DataContext is MainWindowViewModel vm)
         {
@@ -295,6 +295,14 @@ public partial class MainWindow : Window
                 vm.LiveDataPoints.RemoveAt(vm.LiveDataPoints.Count - 1);
                 vm._currentOrderIndex--;
             }
+        }
+    }
+
+    public void DeletePointButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            
 
             // 2. ÖZELLİK: AVCI MODUNU (SEÇEREK SİLME) AÇ / KAPAT
             _isDeleteModeActive = !_isDeleteModeActive;
@@ -326,23 +334,24 @@ public partial class MainWindow : Window
                 : "📍 Tek Nokta Ekleme KAPATILDI.";
         }
     }
-<<<<<<< HEAD
-=======
-
-    public void ClearAllButton_Click(object? sender, RoutedEventArgs e)
+    public void ClearAllPointsButton_Click(object? sender, RoutedEventArgs e)
     {
         if (DataContext is MainWindowViewModel vm)
         {
+            // 1. Senin yazdığın sayacı (OrderIndex) 1'e çeken ve matematiksel listeyi boşaltan metodu çağır
             vm.ClearStreamData();
-            while (_drawnDataDots.Count > 0)
+
+            // 2. Ekrandaki tüm kırmızı/sarı noktaları söküp at (Foreach ile dolaşıp Canvas'tan siliyoruz)
+            foreach (var dot in _drawnDataDots)
             {
-                var dot = _drawnDataDots.Pop();
                 DrawingCanvas.Children.Remove(dot);
             }
-            vm.SystemStatus = "🧹 Tüm veri noktaları temizlendi. Kalibrasyon korundu, yeniden çizim yapabilirsiniz.";
+
+            // 3. Görsel Listeyi tek hamlede tertemiz yap (Pop kullanmaya gerek kalmadı!)
+            _drawnDataDots.Clear();
+
+            // 4. Kullanıcıya sayacın sıfırlandığını arayüzde hissettir
+            vm.SystemStatus = $"🧹 Tüm veri noktaları temizlendi. Sayaç başa alındı! (Mevcut Nokta: {vm.LiveDataPoints.Count})";
         }
     }
-
-
->>>>>>> 6af467b (zorunlu push)
 }

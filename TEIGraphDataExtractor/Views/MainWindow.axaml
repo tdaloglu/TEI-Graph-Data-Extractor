@@ -34,9 +34,11 @@
                     <UniformGrid Columns="2" Rows="3">
                         <Button Content="➕ Ekle" Click="AddPointButton_Click" Background="#2D3B55" Foreground="White" Margin="0,0,4,4" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
                         <Button Content="🖐️ Taşı/Düzenle" Background="#2D3B55" Foreground="White" Margin="4,0,0,4" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
-                        <Button Content="Geri al" Click="DeletePointButton_Click" Background="#2D3B55" Foreground="White" Margin="0,4,4,0" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
-                        <Button Content="🧹 İleri al" Click="ClearAllButton_Click" Background="#2D3B55" Foreground="White" Margin="4,4,0,0" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
-                        <Button Content="🧹 Tümünü Temizle" Click="ClearAllButton_Click" Background="#2D3B55" Foreground="White" Margin="4,4,0,0" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                        <Button Content="Geri al" Click="TekDeletePointButton_Click" Background="#2D3B55" Foreground="White" Margin="0,4,4,0" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                        <Button Content="🧹 İleri al" Click="ClearAllPointsButton_Click" Background="#2D3B55" Foreground="White" Margin="4,4,0,0" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                        <Button Content="🧹 Tümünü Temizle" Click="ClearAllPointsButton_Click" Background="#2D3B55" Foreground="White" Margin="4,4,0,0" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                        <Button Content="🧹 Sil" Click="DeletePointButton_Click" Background="#2D3B55" Foreground="White" Margin="4,4,0,0" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                        
                     </UniformGrid>
                     
            

@@ -31,18 +31,19 @@
                     <TextBlock Text="DÜZENLEME ARAÇLARI" Foreground="#94a3b8" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
                     <Button Content="✒️ Kalem (Seri Çizim)" Click="DrawModeButton_Click" Background="#4DA6FF" Foreground="White" FontSize="14" FontWeight="Bold" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,0,10" Padding="0,10" CornerRadius="6"/>
                     
-                    <UniformGrid Columns="2" Rows="2">
+                    <UniformGrid Columns="2" Rows="3">
                         <Button Content="➕ Ekle" Click="AddPointButton_Click" Background="#2D3B55" Foreground="White" Margin="0,0,4,4" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
-                        <Button Content="🖐️ Taşı (Adj)" Background="#2D3B55" Foreground="White" Margin="4,0,0,4" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                        <Button Content="🖐️ Taşı/Düzenle" Background="#2D3B55" Foreground="White" Margin="4,0,0,4" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
                         <Button Content="Geri al" Click="DeletePointButton_Click" Background="#2D3B55" Foreground="White" Margin="0,4,4,0" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
-                        <Button Content="🧹 Temizle" Background="#2D3B55" Foreground="White" Margin="4,4,0,0" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                        <Button Content="🧹 İleri al" Click="ClearAllButton_Click" Background="#2D3B55" Foreground="White" Margin="4,4,0,0" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                        <Button Content="🧹 Tümünü Temizle" Click="ClearAllButton_Click" Background="#2D3B55" Foreground="White" Margin="4,4,0,0" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
                     </UniformGrid>
                     
-                    <CheckBox Content="Crosshair Göster" Foreground="#94a3b8" IsChecked="True" Margin="0,15,0,0"/>
+           
                 </StackPanel>
 
                 <StackPanel Grid.Row="3" Margin="0,10,0,0">
-                    <TextBlock Text="Z-DEĞERİ GRUPLARI" Foreground="#FFA726" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
+                    <TextBlock Text="Z-DEĞERİ GRUPLARI" Foreground="#FFA726" FontSize="11" FontWeight="Bold" Margin="10,0,0,10"/>
                     <Grid ColumnDefinitions="*, Auto" Margin="0,0,0,15">
                         <TextBlock Text="Toplam Grup Sayısı:" Foreground="White" VerticalAlignment="Center"/>
                         <TextBox Grid.Column="1" Text="{Binding GroupCount}" Width="40" Background="#0b1120" Foreground="White" TextAlignment="Center" CornerRadius="4"/>

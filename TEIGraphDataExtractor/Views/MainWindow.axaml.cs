@@ -326,4 +326,23 @@ public partial class MainWindow : Window
                 : "📍 Tek Nokta Ekleme KAPATILDI.";
         }
     }
+<<<<<<< HEAD
+=======
+
+    public void ClearAllButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            vm.ClearStreamData();
+            while (_drawnDataDots.Count > 0)
+            {
+                var dot = _drawnDataDots.Pop();
+                DrawingCanvas.Children.Remove(dot);
+            }
+            vm.SystemStatus = "🧹 Tüm veri noktaları temizlendi. Kalibrasyon korundu, yeniden çizim yapabilirsiniz.";
+        }
+    }
+
+
+>>>>>>> 6af467b (zorunlu push)
 }

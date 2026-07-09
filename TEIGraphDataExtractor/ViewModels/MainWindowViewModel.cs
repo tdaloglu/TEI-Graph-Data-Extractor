@@ -254,10 +254,12 @@ public partial class MainWindowViewModel : ViewModelBase
         if (closestPoint != null && minDistance <= hitTolerancePixels)
         {
             DeletePoint(closestPoint);
+
             SystemStatus = "ℹ️ Nokta başarı ile silindi.";
             return true;
         } 
 
         return false;
+
     }
 }

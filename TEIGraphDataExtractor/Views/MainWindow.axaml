@@ -64,23 +64,31 @@
         <GridSplitter Grid.Column="1" Background="#2D3B55" ResizeDirection="Columns" Cursor="SizeWestEast" />
 
 <Grid Grid.Column="2" Background="#070b14">
-            
-            <Viewbox Stretch="Uniform" Margin="20,50,20,20">
-                <Border Background="#101D36" BorderBrush="#2D3B55" BorderThickness="1" CornerRadius="8" Width="800" Height="600">
-                    <Grid>
-                        <TextBlock Text="Yüklenen Grafik Burada Gösterilecek" IsVisible="{Binding GraphImage, Converter={x:Static ObjectConverters.IsNull}}" Foreground="#2D3B55" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16"/>
-                        <Image Source="{Binding GraphImage}" Stretch="Uniform" />
-                        <Canvas x:Name="DrawingCanvas" Background="Transparent" PointerMoved="DrawingCanvas_PointerMoved" PointerPressed="DrawingCanvas_PointerPressed"/>
-                    </Grid>
-                </Border>
-            </Viewbox>
+    <Viewbox Stretch="Uniform" Margin="20,50,20,80">
+        <Border Background="#101D36" BorderBrush="#2D3B55" BorderThickness="1" CornerRadius="8" Width="800" Height="600">
+                <Grid x:Name="MainZoomGrid"> <Grid.RenderTransform>
+                    <ScaleTransform ScaleX="1" ScaleY="1" /> 
+                </Grid.RenderTransform>
 
-            <Border Background="#101D36" CornerRadius="6" Padding="10,5" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="20" BorderBrush="#2D3B55" BorderThickness="1">
-                <StackPanel>
-                    <TextBlock x:Name="CoordinateText" Text="X: 0px | Y: 0px" Foreground="#4DA6FF" FontSize="12" FontFamily="Consolas"/>
-                    <TextBlock Text="{Binding SystemStatus}" Foreground="#FFA726" FontSize="12" FontWeight="Bold" Margin="0,5,0,0"/>
-                </StackPanel>
+                    <TextBlock Text="Yüklenen Grafik Burada Gösterilecek" IsVisible="{Binding !IsImageLoaded}" Foreground="#2D3B55" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16"/>
+                    <Image Source="{Binding GraphImage}" Stretch="Uniform" />
+                    <Canvas x:Name="DrawingCanvas" Background="Transparent" PointerMoved="DrawingCanvas_PointerMoved" PointerPressed="DrawingCanvas_PointerPressed"/>
+                </Grid>
             </Border>
+    </Viewbox>
+
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,15,20,0" Spacing="10">
+        <Button Content="➖" Click="ZoomOutButton_Click" Background="#2D3B55" Foreground="White" Width="40" Height="40" CornerRadius="20" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="18" FontWeight="Bold"/>
+        <Button Content="➕" Click="ZoomInButton_Click" Background="#4DA6FF" Foreground="White" Width="40" Height="40" CornerRadius="20" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="18" FontWeight="Bold"/>
+    </StackPanel>
+
+    <Border Background="#101D36" CornerRadius="6" Padding="10,5" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="20" BorderBrush="#2D3B55" BorderThickness="1">
+        <StackPanel>
+            <TextBlock x:Name="CoordinateText" Text="X: 0px | Y: 0px" Foreground="#4DA6FF" FontSize="12" FontFamily="Consolas"/>
+            <TextBlock Text="{Binding SystemStatus}" Foreground="#FFA726" FontSize="12" FontWeight="Bold" Margin="0,5,0,0"/>
+        </StackPanel>
+    </Border>
+            
 
         </Grid>
 
@@ -89,13 +97,17 @@
                 
                 <Border Grid.Row="0" Padding="15">
                     <StackPanel>
-                        <TextBlock Text="BÜYÜTEÇ (MAGNIFIER)" Foreground="#94a3b8" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
-                        <Border Height="220" Background="#070b14" BorderBrush="#2D3B55" BorderThickness="1" CornerRadius="8" ClipToBounds="True">
-                            <Grid>
-                                <TextBlock Text="Yakın Çekim" Foreground="#2D3B55" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <Path Data="M 175,0 L 175,220 M 0,110 L 350,110" Stroke="#FFA726" StrokeThickness="1" Opacity="0.5"/>
-                            </Grid>
-                        </Border>
+                        <TextBlock Text="BÜYÜTEÇ" Foreground="#94a3b8" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
+<Border Height="220" Background="#070b14" BorderBrush="#2D3B55" BorderThickness="1" CornerRadius="8" ClipToBounds="True">
+    
+    <Grid x:Name="MagnifierGrid">
+        <Image x:Name="MagnifierImage" Stretch="Fill" />
+        <Canvas x:Name="MagnifierOverlayCanvas" Background="Transparent" IsHitTestVisible="False" />
+
+        <TextBlock Text="Yakın Çekim" IsVisible="{Binding !IsImageLoaded}" Foreground="#2D3B55" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <Path Data="M 175,0 L 175,220 M 0,110 L 350,110" Stroke="#FFA726" StrokeThickness="1" Opacity="0.5"/>
+    </Grid>
+</Border>
                     </StackPanel>
                 </Border>
 

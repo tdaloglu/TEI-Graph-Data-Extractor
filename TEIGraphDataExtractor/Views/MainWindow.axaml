@@ -231,9 +231,9 @@
                                           Margin="0,5">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="#" Binding="{Binding OrderIndex}" Width="35"/>
-                                        <DataGridTextColumn Header="X Değeri" Binding="{Binding XValue, StringFormat={}{0:F3}}" Width="*"/>
-                                        <DataGridTextColumn Header="Y Değeri" Binding="{Binding YValue, StringFormat={}{0:F3}}" Width="*"/>
-                                        <DataGridTextColumn Header="Z" Binding="{Binding ZValue, StringFormat={}{0:F1}}" Width="50"/>
+                                        <DataGridTextColumn Header="X Değeri" Binding="{Binding XValue, StringFormat={}{0:F4}}" Width="*"/>
+                                        <DataGridTextColumn Header="Y Değeri" Binding="{Binding YValue, StringFormat={}{0:F4}}" Width="*"/>
+                                        <DataGridTextColumn Header="Z" Binding="{Binding ZValue, StringFormat={}{0:F3}}" Width="50"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </DockPanel>

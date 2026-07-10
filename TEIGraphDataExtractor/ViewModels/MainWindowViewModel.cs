@@ -69,7 +69,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     //artık tüm noktalar secildiginde asagıdaki satırlar calısır
 
-    private double _activeZValue = 0.8;
+    private double _activeZValue = 0;
     public double ActiveZValue
     {
         get => _activeZValue;
@@ -326,7 +326,7 @@ public partial class MainWindowViewModel : ViewModelBase
             ZGroups.Add(new ZGroupItem
             {
                 Id = ZGroups.Count + 1,
-                ZValue = 0.8,
+                ZValue = 0.0,
                 ColorHex = colors[ZGroups.Count % colors.Length],
                 IsActive = ZGroups.Count == 0
             });

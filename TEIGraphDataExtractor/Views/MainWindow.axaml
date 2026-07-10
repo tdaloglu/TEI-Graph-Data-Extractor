@@ -61,7 +61,7 @@
                     
                     <Grid Grid.Row="1" ColumnDefinitions="*, Auto" Margin="0,0,0,15">
                         <TextBlock Text="Toplam Grup Sayısı:" Foreground="White" VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1" Text="{Binding GroupCount}" Width="40" Background="#0b1120" Foreground="White" TextAlignment="Center" CornerRadius="4"/>
+                        <TextBox Grid.Column="1" Text="{Binding GroupCountText, Mode=TwoWay}" Width="40" Background="#0b1120" Foreground="White" TextAlignment="Center" CornerRadius="4"/>
                     </Grid>
 
                     <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,5,0">
@@ -70,9 +70,12 @@
                                 <DataTemplate>
                                     <Border Background="#0b1120" CornerRadius="6" Padding="8" Margin="0,0,0,8" BorderThickness="1" BorderBrush="#2D3B55">
                                         <Grid ColumnDefinitions="Auto, *, Auto">
-                                            <Ellipse Width="12" Height="12" Fill="{Binding ColorHex}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                            <Ellipse Grid.Column="0" Width="12" Height="12" Fill="{Binding ColorHex}" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                             <TextBox Grid.Column="1" Text="{Binding ZValue, Mode=TwoWay}" Background="Transparent" Foreground="White" BorderThickness="0" VerticalAlignment="Center"/>
-                                            <Button Grid.Column="2" Content="Seç" Click="SelectZGroupButton_Click" Tag="{Binding}" FontSize="11" Padding="12,5" Background="#2D3B55" Foreground="White" CornerRadius="4"/>
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                <Button Content="Seç" Click="SelectZGroupButton_Click" Tag="{Binding}" FontSize="11" Padding="12,5" Background="#2D3B55" Foreground="White" CornerRadius="4"/>
+                                                <Button Content="❌" Click="DeleteZGroupButton_Click" Tag="{Binding}" FontSize="11" Padding="8,5" Background="#E53935" Foreground="White" CornerRadius="4"/>
+                                            </StackPanel>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>

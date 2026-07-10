@@ -8,6 +8,7 @@ using TEIGraphDataExtractor.Services.Database;
 using TEIGraphDataExtractor.Services.Export;
 using Avalonia.Diagnostics;
 using System.IO;
+using System.Text.RegularExpressions;
 
 
 namespace TEIGraphDataExtractor.ViewModels;
@@ -35,19 +36,40 @@ public partial class MainWindowViewModel : ViewModelBase
     }
     public bool IsImageLoaded => GraphImage != null;
     private int _groupCount = 0;
-    public int GroupCount
+    private string _groupCountText = "0";
+    public string GroupCountText
     {
-        get => _groupCount;
+        get => _groupCountText;
         set
         {
-            if (_groupCount != value && value > 0 && value <= 15)
+            _groupCountText = value;
+            RaisePropertyChanged();
+
+            if (int.TryParse(value, out int parsedValue))
             {
-                _groupCount = value;
-                RaisePropertyChanged();
+                if (parsedValue > 15)
+                {
+                    parsedValue = 15;
+                    _groupCountText = "15";
+                    RaisePropertyChanged();
+                } else if (parsedValue < 0)
+                {
+                    parsedValue = 0;
+                    _groupCountText = "0";
+                    RaisePropertyChanged();
+                }
+
+                _groupCount = parsedValue;
                 GenerateZGroups();
-            } 
+            } else if (string.IsNullOrWhiteSpace(value))
+            {
+                _groupCount = 0;
+                GenerateZGroups();
+            }
         }
     }
+
+
     private double _realXMin = 0.0;
     public double RealXMin { get => _realXMin; set { _realXMin = value; RaisePropertyChanged(); } }
 
@@ -321,7 +343,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         string[] colors = {"#FF4D4D", "#4DA6FF", "#4DFF4D", "#FFA726", "#FF4DFF", "#FFFF4D"};
 
-        while (ZGroups.Count < GroupCount)
+        while (ZGroups.Count < _groupCount)
         {
             ZGroups.Add(new ZGroupItem
             {
@@ -332,7 +354,7 @@ public partial class MainWindowViewModel : ViewModelBase
             });
         }
 
-        while (ZGroups.Count > GroupCount)
+        while (ZGroups.Count > _groupCount)
         {
             ZGroups.RemoveAt(ZGroups.Count - 1);
         }
@@ -347,5 +369,33 @@ public partial class MainWindowViewModel : ViewModelBase
 
         ActiveZValue = selectedGroup.ZValue;
         SystemStatus = $"🏷️ Aktif Z Grubu Değişti: Grup {selectedGroup.Id} (Z = {selectedGroup.ZValue})";
+    }
+
+    public void RemoveZGroup(ZGroupItem groupToRemove)
+    {
+        if (groupToRemove == null) return;
+
+        if (ZGroups.Contains(groupToRemove))
+        {
+            bool wasActive = groupToRemove.IsActive;
+            ZGroups.Remove(groupToRemove);
+
+            _groupCount = ZGroups.Count;
+            GroupCountText = _groupCount.ToString();
+
+            if (wasActive && ZGroups.Count > 0)
+            {
+                SetActiveGroup(ZGroups[0]);
+            } else if (ZGroups.Count == 0)
+            {
+                ActiveZValue = 0.0;
+                SystemStatus = "⚠️ Hiçbir Z grubu kalmadı. Lütfen yeni bir grup ekleyin.";
+            }
+
+            for (int i = 0; i < ZGroups.Count; i++)
+            {
+                ZGroups[i].Id = i + 1;
+            }
+        }
     }
 }

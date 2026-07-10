@@ -17,6 +17,10 @@ public partial class MainWindow : Window
     private int _calibrationClicksCount = 0; // ==4 olunca kalibre edilebilecek
     private bool _isDrawModeActive = false;
     private System.Collections.Generic.Dictionary<string, Ellipse> _calibrationMarkers = new();
+    // [YENİ]: Her kalibrasyon noktasının yanına koyduğumuz "X1"/"X2"/"Y1"/"Y2" etiketleri
+    private System.Collections.Generic.Dictionary<string, TextBlock> _calibrationLabels = new();
+    // [YENİ]: Otomatik sıralama için adım listesi. Bir adım bitince buradaki sıradaki adıma geçiyoruz.
+    private static readonly string[] _calibrationOrder = { "X1", "X2", "Y1", "Y2" };
     private Avalonia.Point _lastCollectedPoint = new Avalonia.Point(0, 0);
 
     // [HEM GERİ AL HEM SEÇEREK SİLME İÇİN DEĞİŞTİ]: Stack yerine List kullanıyoruz!
@@ -52,7 +56,8 @@ public partial class MainWindow : Window
             if (DataContext is MainWindowViewModel vm)
             {
                 vm.GraphImage = bitmap;
-                vm.SystemStatus = "Grafik yüklendi. Lütfen kalibrasyon adımlarına başlayınız.";
+                // [YENİ]: Resim yüklenir yüklenmez kalibrasyon sırasını otomatik başlat (X1'den).
+                SetCalibrationStep("X1", "📍 Resim üzerinde X1 (Min) noktasını tıklayarak seçin...");
             }
         }
     }
@@ -147,8 +152,10 @@ if (_isAdjustModeActive)
         {
             if (!string.IsNullOrEmpty(_activeCalibrationStep))
             {
+                string currentStep = _activeCalibrationStep;
+
                 // İlgili pikseli ViewModel'in geçici hafızasına yaz
-                switch (_activeCalibrationStep)
+                switch (currentStep)
                 {
                     case "X1": vm.MinPixelX = point.X; break;
                     case "X2": vm.XMaxPixelX = point.X; break;
@@ -156,12 +163,17 @@ if (_isAdjustModeActive)
                     case "Y2": vm.YMaxPixelY = point.Y; break;
                 }
 
-                if (_calibrationMarkers.ContainsKey(_activeCalibrationStep))
+                if (_calibrationMarkers.ContainsKey(currentStep))
                 {
-                    DrawingCanvas.Children.Remove(_calibrationMarkers[_activeCalibrationStep]);
+                    DrawingCanvas.Children.Remove(_calibrationMarkers[currentStep]);
+                }
+                // [YENİ]: Aynı nokta tekrar seçilirse eski etiketi de kaldır
+                if (_calibrationLabels.ContainsKey(currentStep))
+                {
+                    DrawingCanvas.Children.Remove(_calibrationLabels[currentStep]);
                 }
 
-                IBrush markerColor = _activeCalibrationStep switch
+                IBrush markerColor = currentStep switch
                 {
                     "X1" => Brushes.Cyan,         // Parlak Kırmızı
                     "X2" => Brushes.DarkOrange,   // Turuncu
@@ -182,9 +194,24 @@ if (_isAdjustModeActive)
                 Canvas.SetLeft(marker, point.X - 5);
                 Canvas.SetTop(marker, point.Y - 5);
                 DrawingCanvas.Children.Add(marker);
-                _calibrationMarkers[_activeCalibrationStep] = marker;
+                _calibrationMarkers[currentStep] = marker;
 
-                vm.SystemStatus = $"✅ {_activeCalibrationStep} Noktası Güncellendi ({point.X:F0}px, {point.Y:F0}px).";
+                // [YENİ]: Noktanın hemen yanına "X1"/"X2"/"Y1"/"Y2" yazan küçük bir etiket koy,
+                // böylece kullanıcı hangi noktayı işaretlediğini görsel olarak da anlayabilsin.
+                var label = new TextBlock
+                {
+                    Text = currentStep,
+                    Foreground = markerColor,
+                    FontWeight = Avalonia.Media.FontWeight.Bold,
+                    FontSize = 13,
+                    Background = new SolidColorBrush(Color.FromArgb(160, 7, 11, 20))
+                };
+                Canvas.SetLeft(label, point.X + 8);
+                Canvas.SetTop(label, point.Y - 18);
+                DrawingCanvas.Children.Add(label);
+                _calibrationLabels[currentStep] = label;
+
+                vm.SystemStatus = $"✅ {currentStep} Noktası Güncellendi ({point.X:F0}px, {point.Y:F0}px).";
                 _activeCalibrationStep = ""; // Seçimi sıfırla
                 _calibrationClicksCount++;
 
@@ -193,6 +220,43 @@ if (_isAdjustModeActive)
                 {
                     vm.SystemStatus = "4 kalibrasyon noktası başarı ile seçildi. 'Kalibrasyonu Tamamla' butonuna basabilirsiniz.";
                     _calibrationClicksCount = 0;
+
+                    // [YENİ]: Kalibrasyon tamamlandığında X1/X2/Y1/Y2 yazı etiketlerini
+                    // gizle (renkli noktalar/marker'lar sahnede kalmaya devam ediyor).
+                    foreach (var kvp in _calibrationLabels)
+                    {
+                        DrawingCanvas.Children.Remove(kvp.Value);
+                    }
+                    _calibrationLabels.Clear();
+                }
+                else
+                {
+                    // [YENİ]: Otomatik sıralama — X1 -> X2 -> Y1 -> Y2 sırasında henüz
+                    // işaretlenmemiş ilk adımı bul ve otomatik olarak onu aktif hale getir.
+                    // Böylece kullanıcı her adımda ayrıca butona basmak zorunda kalmaz;
+                    // ama dilerse yandaki butonlardan istediği noktayı manuel de seçebilir.
+                    string? nextStep = null;
+                    foreach (var step in _calibrationOrder)
+                    {
+                        if (!_calibrationMarkers.ContainsKey(step))
+                        {
+                            nextStep = step;
+                            break;
+                        }
+                    }
+
+                    if (nextStep != null)
+                    {
+                        string message = nextStep switch
+                        {
+                            "X1" => "📍 Şimdi X1 (Min) noktasını tıklayarak seçin...",
+                            "X2" => "📍 Şimdi X2 (Max) noktasını tıklayarak seçin...",
+                            "Y1" => "📍 Şimdi Y1 (Min) noktasını tıklayarak seçin...",
+                            "Y2" => "📍 Şimdi Y2 (Max) noktasını tıklayarak seçin...",
+                            _ => "📍 Sıradaki noktayı tıklayarak seçin..."
+                        };
+                        SetCalibrationStep(nextStep, $"✅ {currentStep} kaydedildi. {message}");
+                    }
                 }
                 return;
             }
@@ -264,7 +328,9 @@ if (_isAdjustModeActive)
                 CoordinateText.Text = $"Taşınıyor... X: {realCoords.RealX:F3} | Y: {realCoords.RealY:F3}";
             }
             DrawingCanvas.InvalidateVisual();
-        
+            // [DÜZELTME]: Önceden burada "return;" vardı ve bu, aşağıdaki büyüteç
+            // (magnifier) motorunun sürükleme sırasında hiç çalışmamasına sebep
+            // oluyordu. return kaldırıldı; kod artık aşağı akıp büyüteci de günceller.
         }
 
         if (DataContext is MainWindowViewModel vm && vm.Converter.IsCalibrated)
@@ -392,33 +458,63 @@ if (_isAdjustModeActive)
 
                     foreach (var child in DrawingCanvas.Children)
                     {
-                        if (child is not Ellipse dot) continue;
-
-                        double dotCenterX = Canvas.GetLeft(dot) + (dot.Width / 2);
-                        double dotCenterY = Canvas.GetTop(dot) + (dot.Height / 2);
-
-                        bool isInsideCrop =
-                            dotCenterX >= cropCanvasLeft && dotCenterX <= cropCanvasLeft + cropCanvasWidth &&
-                            dotCenterY >= cropCanvasTop && dotCenterY <= cropCanvasTop + cropCanvasHeight;
-
-                        if (!isInsideCrop) continue;
-
-                        double panelX = (dotCenterX - cropCanvasLeft) * overlayScale;
-                        double panelY = (dotCenterY - cropCanvasTop) * overlayScale;
-                        double miniWidth = Math.Max(2, dot.Width * overlayScale);
-                        double miniHeight = Math.Max(2, dot.Height * overlayScale);
-
-                        var miniDot = new Ellipse
+                        // [YENİ]: Artık sadece Ellipse (noktalar) değil, TextBlock
+                        // (kalibrasyon sırasında konan "X1"/"X2"/"Y1"/"Y2" etiketleri) de
+                        // büyüteç panelinde gösteriliyor.
+                        if (child is Ellipse dot)
                         {
-                            Width = miniWidth,
-                            Height = miniHeight,
-                            Fill = dot.Fill,
-                            Stroke = dot.Stroke,
-                            StrokeThickness = dot.StrokeThickness
-                        };
-                        Canvas.SetLeft(miniDot, panelX - (miniWidth / 2));
-                        Canvas.SetTop(miniDot, panelY - (miniHeight / 2));
-                        overlayCanvas.Children.Add(miniDot);
+                            double dotCenterX = Canvas.GetLeft(dot) + (dot.Width / 2);
+                            double dotCenterY = Canvas.GetTop(dot) + (dot.Height / 2);
+
+                            bool isInsideCrop =
+                                dotCenterX >= cropCanvasLeft && dotCenterX <= cropCanvasLeft + cropCanvasWidth &&
+                                dotCenterY >= cropCanvasTop && dotCenterY <= cropCanvasTop + cropCanvasHeight;
+
+                            if (!isInsideCrop) continue;
+
+                            double panelX = (dotCenterX - cropCanvasLeft) * overlayScale;
+                            double panelY = (dotCenterY - cropCanvasTop) * overlayScale;
+                            double miniWidth = Math.Max(2, dot.Width * overlayScale);
+                            double miniHeight = Math.Max(2, dot.Height * overlayScale);
+
+                            var miniDot = new Ellipse
+                            {
+                                Width = miniWidth,
+                                Height = miniHeight,
+                                Fill = dot.Fill,
+                                Stroke = dot.Stroke,
+                                StrokeThickness = dot.StrokeThickness
+                            };
+                            Canvas.SetLeft(miniDot, panelX - (miniWidth / 2));
+                            Canvas.SetTop(miniDot, panelY - (miniHeight / 2));
+                            overlayCanvas.Children.Add(miniDot);
+                        }
+                        else if (child is TextBlock label)
+                        {
+                            double labelLeft = Canvas.GetLeft(label);
+                            double labelTop = Canvas.GetTop(label);
+
+                            bool isInsideCrop =
+                                labelLeft >= cropCanvasLeft && labelLeft <= cropCanvasLeft + cropCanvasWidth &&
+                                labelTop >= cropCanvasTop && labelTop <= cropCanvasTop + cropCanvasHeight;
+
+                            if (!isInsideCrop) continue;
+
+                            double panelX = (labelLeft - cropCanvasLeft) * overlayScale;
+                            double panelY = (labelTop - cropCanvasTop) * overlayScale;
+
+                            var miniLabel = new TextBlock
+                            {
+                                Text = label.Text,
+                                Foreground = label.Foreground,
+                                Background = label.Background,
+                                FontWeight = label.FontWeight,
+                                FontSize = Math.Max(8, label.FontSize * overlayScale)
+                            };
+                            Canvas.SetLeft(miniLabel, panelX);
+                            Canvas.SetTop(miniLabel, panelY);
+                            overlayCanvas.Children.Add(miniLabel);
+                        }
                     }
                 }
             }
@@ -469,17 +565,18 @@ if (_isAdjustModeActive)
 
             DrawingCanvas.Children.Clear();
             _calibrationMarkers.Clear();
+            _calibrationLabels.Clear();
             _drawnDataDots.Clear();
             vm.LiveDataPoints.Clear();
             vm._currentOrderIndex = 1;
 
             _calibrationClicksCount = 0;
-            _activeCalibrationStep = "";
             _isDrawModeActive = false;
             _isSingleAddModeActive = false;
             _isDeleteModeActive = false; // Sıfırlanırken silme modu da kapanır
 
-            vm.SystemStatus = "🔄 Tüm kalibrasyon ve grafik verileri başarıyla sıfırlandı.";
+            // [YENİ]: Sıfırlama sonrası kalibrasyon sırasını otomatik olarak X1'den başlat
+            SetCalibrationStep("X1", "🔄 Tüm kalibrasyon ve grafik verileri sıfırlandı. 📍 X1 (Min) noktasını tıklayarak seçin...");
         }
     }
 
@@ -568,28 +665,66 @@ public void TekDeletePointButton_Click(object? sender, Avalonia.Interactivity.Ro
     }
     public void ZoomInButton_Click(object? sender, RoutedEventArgs e)
     {
-        // 🚀 KURŞUN GEÇİRMEZ YÖNTEM: "Git XAML içinden MainZoomGrid'i zorla bul!"
-        var mainZoomGrid = this.FindControl<Grid>("MainZoomGrid");
-
-        if (mainZoomGrid?.RenderTransform is ScaleTransform scale)
-        {
-            scale.ScaleX += 0.2;
-            scale.ScaleY += 0.2;
-        }
+        AdjustZoom(0.2);
     }
 
     public void ZoomOutButton_Click(object? sender, RoutedEventArgs e)
     {
+        AdjustZoom(-0.2);
+    }
+
+    // [DÜZELTME]: Önceden sadece ScaleTransform ile "görsel" büyütme yapılıyordu; bu,
+    // içeriğin GERÇEK boyutunu (layout boyutunu) değiştirmediği için ScrollViewer
+    // hiçbir zaman scroll bar göstermiyordu (özellikle dikeyde). Artık Border'ın
+    // Width/Height değerini de zoom oranına göre büyütüyoruz, böylece ScrollViewer
+    // içeriğin gerçekten büyüdüğünü görüyor ve scroll bar'lar SADECE gerekince
+    // (zoom oranı görünür alandan büyükse) otomatik ortaya çıkıyor.
+    private const double BaseCanvasWidth = 800;
+    private const double BaseCanvasHeight = 600;
+
+    private void AdjustZoom(double delta)
+    {
+        // 🚀 KURŞUN GEÇİRMEZ YÖNTEM: "Git XAML içinden MainZoomGrid'i zorla bul!"
         var mainZoomGrid = this.FindControl<Grid>("MainZoomGrid");
+        var mainZoomBorder = this.FindControl<Border>("MainZoomBorder");
 
         if (mainZoomGrid?.RenderTransform is ScaleTransform scale)
         {
-            if (scale.ScaleX > 0.4)
+            double newScale = scale.ScaleX + delta;
+            // Alt ve üst sınır: en az 0.4x, en fazla 5x büyütme
+            newScale = Math.Clamp(newScale, 0.4, 5.0);
+            scale.ScaleX = newScale;
+            scale.ScaleY = newScale;
+
+            // Border'ın gerçek boyutunu da aynı oranda büyüt/küçült.
+            // 1.0'ın altına inmiyoruz ki ana görünüm alanından küçülüp
+            // içerik garip bir şekilde küçük kalmasın; sadece 1.0 ve üstünde
+            // gerçek boyut büyüyor, ScrollViewer da sadece o zaman scroll bar gösteriyor.
+            double sizeScale = Math.Max(1.0, newScale);
+            if (mainZoomBorder != null)
             {
-                scale.ScaleX -= 0.2;
-                scale.ScaleY -= 0.2;
+                mainZoomBorder.Width = BaseCanvasWidth * sizeScale;
+                mainZoomBorder.Height = BaseCanvasHeight * sizeScale;
             }
         }
+    }
+
+    // [YENİ]: Touchpad iki-parmak kaydırma / mouse wheel (fare tekerleği) ile zoom.
+    // Sadece Ctrl basılıyken tekerlek/touchpad hareketi zoom'a çevriliyor;
+    // Ctrl basılı değilken ScrollViewer'ın normal scroll davranışı olduğu gibi kalıyor.
+    public void MainZoomScrollViewer_PointerWheelChanged(object? sender, PointerWheelEventArgs e)
+    {
+        var keyModifiers = e.KeyModifiers;
+        bool isZoomGesture = keyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Control);
+
+        if (isZoomGesture)
+        {
+            double delta = e.Delta.Y > 0 ? 0.2 : -0.2;
+            AdjustZoom(delta);
+            e.Handled = true; // ScrollViewer'ın normal kaydırma yapmasını engelle
+        }
+        // Ctrl basılı değilse: dokunuş burada işlenmez, event ScrollViewer'a geçer
+        // ve kullanıcı normal şekilde yukarı/aşağı/yana kaydırabilir.
     }
 
     public void DrawingCanvas_PointerReleased(object? sender, PointerReleasedEventArgs e)

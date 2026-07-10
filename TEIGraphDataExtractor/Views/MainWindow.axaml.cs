@@ -8,6 +8,7 @@ using Avalonia.Media.Imaging;
 using System;
 using TEIGraphDataExtractor.ViewModels;
 using TEIGraphDataExtractor.Services.Export;
+using TEIGraphDataExtractor.Models;
 
 namespace TEIGraphDataExtractor.Views;
 
@@ -512,4 +513,14 @@ public partial class MainWindow : Window
         }
     }
     
+    public void SelectZGroupButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is ZGroupItem clickedGroup)
+        {
+            if (DataContext is MainWindowViewModel vm)
+            {
+                vm.SetActiveGroup(clickedGroup);
+            }
+        }
+    }
 }

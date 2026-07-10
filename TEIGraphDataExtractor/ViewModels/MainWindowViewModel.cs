@@ -34,11 +34,19 @@ public partial class MainWindowViewModel : ViewModelBase
             }
     }
     public bool IsImageLoaded => GraphImage != null;
-    private int _groupCount = 1;
+    private int _groupCount = 0;
     public int GroupCount
     {
         get => _groupCount;
-        set { _groupCount = value; RaisePropertyChanged(); }
+        set
+        {
+            if (_groupCount != value && value > 0 && value <= 15)
+            {
+                _groupCount = value;
+                RaisePropertyChanged();
+                GenerateZGroups();
+            } 
+        }
     }
     private double _realXMin = 0.0;
     public double RealXMin { get => _realXMin; set { _realXMin = value; RaisePropertyChanged(); } }
@@ -305,5 +313,39 @@ public partial class MainWindowViewModel : ViewModelBase
             SystemStatus = $"⚠️ CSV İndirme Hatası: {ex.Message}";
             Console.WriteLine($"[❌ EXPORT HATASI]: {ex.Message}");
         }
+    }
+
+    public ObservableCollection<ZGroupItem> ZGroups {get; } = new();
+
+    public void GenerateZGroups()
+    {
+        string[] colors = {"#FF4D4D", "#4DA6FF", "#4DFF4D", "#FFA726", "#FF4DFF", "#FFFF4D"};
+
+        while (ZGroups.Count < GroupCount)
+        {
+            ZGroups.Add(new ZGroupItem
+            {
+                Id = ZGroups.Count + 1,
+                ZValue = 0.8,
+                ColorHex = colors[ZGroups.Count % colors.Length],
+                IsActive = ZGroups.Count == 0
+            });
+        }
+
+        while (ZGroups.Count > GroupCount)
+        {
+            ZGroups.RemoveAt(ZGroups.Count - 1);
+        }
+    }
+
+    public void SetActiveGroup(ZGroupItem selectedGroup)
+    {
+        foreach (var group in ZGroups)
+        {
+            group.IsActive = (group == selectedGroup);
+        }
+
+        ActiveZValue = selectedGroup.ZValue;
+        SystemStatus = $"🏷️ Aktif Z Grubu Değişti: Grup {selectedGroup.Id} (Z = {selectedGroup.ZValue})";
     }
 }

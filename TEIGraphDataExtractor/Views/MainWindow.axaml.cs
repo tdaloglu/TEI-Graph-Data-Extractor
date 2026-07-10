@@ -96,11 +96,17 @@ public partial class MainWindow : Window
             // 15 piksel yakınımızda bir nokta varsa hem ekrandan hem listeden sil!
             if (closestDot != null)
             {
+                int targetIndex = _drawnDataDots.IndexOf(closestDot);
+
                 DrawingCanvas.Children.Remove(closestDot);
-                _drawnDataDots.Remove(closestDot); // List olduğu için ortadan eleman silebiliyoruz!
-                
-                // Backend motorunu tetikleyip veritabanı/RAM listesinden de sildiriyoruz
-                vmDelete.TryDeletePointAtPixel(point.X, point.Y, 15.0);
+                _drawnDataDots.RemoveAt(targetIndex);
+
+                if (targetIndex >= 0 && targetIndex < vmDelete.LiveDataPoints.Count)
+                {
+                    vmDelete.LiveDataPoints.RemoveAt(targetIndex);
+                }
+
+                vmDelete.SystemStatus = $"🎯 Nokta seçilerek silindi. Kalan Nokta: {vmDelete.LiveDataPoints.Count}";
             }
             else
             {

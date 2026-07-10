@@ -6,9 +6,10 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Media.Imaging;
 using System;
+using TEIGraphDataExtractor.Models;
 using TEIGraphDataExtractor.ViewModels;
 using TEIGraphDataExtractor.Services.Export;
-using TEIGraphDataExtractor.Models;
+
 
 namespace TEIGraphDataExtractor.Views;
 
@@ -34,6 +35,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        this.AddHandler(KeyDownEvent, Window_KeyDown, RoutingStrategies.Tunnel);
     }
 
     public async void LoadImageButton_Click(object? sender, RoutedEventArgs e)
@@ -246,7 +248,7 @@ public partial class MainWindow : Window
                 var newPoint = vm.CaptureStreamPoint(point.X, point.Y);
                 if (newPoint != null)
                 {
-                    var dataDot = new Ellipse { Width = 4, Height = 4, Fill = Brushes.Red };
+                    var dataDot = new Ellipse { Width = 4, Height = 4, Fill = _currentPenColor };
                     Canvas.SetLeft(dataDot, point.X - 2);
                     Canvas.SetTop(dataDot, point.Y - 2);
                     DrawingCanvas.Children.Add(dataDot); 
@@ -296,7 +298,7 @@ public partial class MainWindow : Window
                     var newPoint = vm.CaptureStreamPoint(point.X, point.Y);
                     if (newPoint != null)
                     {
-                        var dataDot = new Ellipse { Width = 4, Height = 4, Fill = Brushes.Red };
+                        var dataDot = new Ellipse { Width = 4, Height = 4, Fill =_currentPenColor  };
                         Canvas.SetLeft(dataDot, point.X - 2);
                         Canvas.SetTop(dataDot, point.Y - 2);
 
@@ -594,12 +596,27 @@ public partial class MainWindow : Window
 
     public void SelectZGroupButton_Click(object? sender, RoutedEventArgs e)
     {
-        if (sender is Button btn && btn.Tag is ZGroupItem clickedGroup)
+        // 1. Tag kontrolü ve ZGroupItem dönüşümü
+        if (sender is Button btn && btn.Tag is TEIGraphDataExtractor.Models.ZGroupItem clickedGroup)
         {
+            // 2. DataContext'in ViewModel olduğunu doğruluyoruz ve 'vm' değişkenini yaratıyoruz
             if (DataContext is MainWindowViewModel vm)
             {
                 vm.SetActiveGroup(clickedGroup);
-            }
+
+                if (!string.IsNullOrEmpty(clickedGroup.ColorHex))
+                {
+                    try
+                    {
+                        _currentPenColor = Brush.Parse(clickedGroup.ColorHex);
+                        vm.SystemStatus = $"🎨 Aktif Grup Değişti: Z = {clickedGroup.ZValue}. Kalem rengi güncellendi!";
+                    }
+                    catch
+                    {
+                        _currentPenColor = Brushes.Red; // Dönüşüm patlarsa kırmızıya dön
+                    }
+                }
+            } 
         }
     }
 
@@ -694,6 +711,7 @@ public partial class MainWindow : Window
                     mainZoomScrollViewer.VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled;
                 }
             }
+            
         }
     }
 
@@ -706,5 +724,18 @@ public partial class MainWindow : Window
                 vm.RemoveZGroup(clickedGroup);
             }
         }
+    }
+    // [GÜNCELLENDİ]: Hem Windows (Ctrl+Z) hem Mac (Cmd+Z) destekleyen geri al fonksiyonu
+    private void Window_KeyDown(object? sender, KeyEventArgs e)
+    {
+       
+       bool isCtrlOrCmdPressed = e.KeyModifiers.HasFlag(KeyModifiers.Control) ||
+                           e.KeyModifiers.HasFlag(KeyModifiers.Meta);
+    if (isCtrlOrCmdPressed && e.Key == Key.Z)
+    {
+        TekDeletePointButton_Click(sender, new Avalonia.Interactivity.RoutedEventArgs());
+        e.Handled = true;
+    }
+
     }
 }

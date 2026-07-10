@@ -341,7 +341,22 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public void GenerateZGroups()
     {
-        string[] colors = {"#FF4D4D", "#4DA6FF", "#4DFF4D", "#FFA726", "#FF4DFF", "#FFFF4D"};
+        string[] colors = {
+    "#FF3B30", // Canlı Kırmızı
+    "#007AFF", // Dijital Mavi
+    "#34C759", // Zümrüt Yeşili
+    "#FF9500", // Enerjik Turuncu
+    "#AF52DE", // Neon Mor
+    "#FFCC00", // Parlak Sarı
+    "#5AC8FA", // Gökyüzü Mavisi
+    "#FF2D55", // Pembe / Fuşya
+    "#00E1E2", // Turkuaz
+    "#E0A96D", // Altın / Şampanya
+    "#81C784", // Açık Yeşil
+    "#ca66b9",
+    "#3bae9f",
+    "#311a9b"
+    };
 
         while (ZGroups.Count < _groupCount)
         {

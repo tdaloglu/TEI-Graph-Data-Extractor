@@ -8,7 +8,6 @@ using Avalonia.Media.Imaging;
 using System;
 using TEIGraphDataExtractor.ViewModels;
 using TEIGraphDataExtractor.Services.Export;
-using TEIGraphDataExtractor.Models;
 
 namespace TEIGraphDataExtractor.Views;
 
@@ -709,17 +708,6 @@ public void TekDeletePointButton_Click(object? sender, Avalonia.Interactivity.Ro
             }
         }
     }
-    
-    public void SelectZGroupButton_Click(object? sender, RoutedEventArgs e)
-    {
-        if (sender is Button btn && btn.Tag is ZGroupItem clickedGroup)
-        {
-            if (DataContext is MainWindowViewModel vm)
-            {
-                vm.SetActiveGroup(clickedGroup);
-            }
-        }
-    }
 
     // [YENİ]: Touchpad iki-parmak kaydırma / mouse wheel (fare tekerleği) ile zoom.
     // Sadece Ctrl basılıyken tekerlek/touchpad hareketi zoom'a çevriliyor;
@@ -790,29 +778,7 @@ public void TekDeletePointButton_Click(object? sender, Avalonia.Interactivity.Ro
             }
     }
 
-    public async void ExportCsvButton_Click(object? sender, RoutedEventArgs e)
-    {
-        if (DataContext is MainWindowViewModel vm)
-        {
-            var topLevel = TopLevel.GetTopLevel(this);
-            if (topLevel == null) return;
 
-            var file = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
-            {
-                Title = "TEI Grafik Verisini CSV Olarak Kaydet",
-                DefaultExtension = "csv",
-                SuggestedFileName = $"TEI_Grafik_Verisi_{DateTime.Now:yyyyMMdd_HHmmss}.csv",
-                FileTypeChoices = new[]
-                {
-                    new FilePickerFileType("CSV Dosyası (*.csv)") {Patterns = new[] {"*.csv"}}
-                }   
-            });
 
-            if (file != null)
-            {
-                vm.ExportToCsv(file.Path.LocalPath);
-            }
-        }
-    }
 
 }

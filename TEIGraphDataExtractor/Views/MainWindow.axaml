@@ -49,13 +49,19 @@
                         <TextBlock Text="Toplam Grup Sayısı:" Foreground="White" VerticalAlignment="Center"/>
                         <TextBox Grid.Column="1" Text="{Binding GroupCount}" Width="40" Background="#0b1120" Foreground="White" TextAlignment="Center" CornerRadius="4"/>
                     </Grid>
-                    <Border Background="#0b1120" CornerRadius="6" Padding="8" Margin="0,0,0,8">
-                        <Grid ColumnDefinitions="Auto, *, Auto">
-                            <Ellipse Width="12" Height="12" Fill="#FF4D4D" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                            <TextBox Grid.Column="1" Text="{Binding ActiveZValue, Mode=TwoWay}" Background="Transparent" Foreground="White" BorderThickness="0" VerticalAlignment="Center"/>
-                            <Button Grid.Column="2" Content="Seç" FontSize="11" Padding="12,5" Background="#2D3B55" Foreground="White" CornerRadius="4"/>
-                        </Grid>
-                    </Border>
+                    <ItemsControl ItemsSource="{Binding ZGroups}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#0b1120" CornerRadius="6" Padding="8" Margin="0,0,0,8" BorderThickness="1" BorderBrush="#2D3B55">
+                                    <Grid ColumnDefinitions="Auto, *, Auto">
+                                        <Ellipse Width="12" Height="12" Fill="{Binding ColorHex}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                        <TextBox Grid.Column="1" Text="{Binding ZValue, Mode=TwoWay}" Background="Transparent" Foreground="White" BorderThickness="0" VerticalAlignment="Center"/>
+                                        <Button Grid.Column="2" Content="Seç" Click="SelectZGroupButton_Click" Tag="{Binding}" FontSize="11" Padding="12,5" Background="#2D3B55" Foreground="White" CornerRadius="4"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </StackPanel>
             </Grid>
         </Border>
@@ -212,7 +218,7 @@
                                 </Border>
 
                                 <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
-                                    <Button Content="📄 CSV Olarak İndir" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,10" CornerRadius="4" FontSize="13"/>
+                                    <Button Content="📄 CSV Olarak İndir" Click="ExportCsvButton_Click" Background="#2D3B55" Foreground="White" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,10" CornerRadius="4" FontSize="13"/>
                                 </StackPanel>
 
                                 <DataGrid ItemsSource="{Binding LiveDataPoints}"

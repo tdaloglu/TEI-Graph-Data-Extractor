@@ -16,7 +16,7 @@ public partial class MainWindowViewModel : ViewModelBase
 {
    public CoordinateConverter Converter { get; } = new CoordinateConverter();
    private readonly GraphDataService _graphDataService = new GraphDataService();
-   private string _systemStatus = "✅ Sistem Hazır (Kalibrasyon Bekleniyor)";
+   private string _systemStatus = "✅ Sistem Hazır. Lütfen görsel yükleyiniz.";
    public string SystemStatus
     {
         get => _systemStatus;

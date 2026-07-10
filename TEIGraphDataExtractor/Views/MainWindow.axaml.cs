@@ -2,7 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Interactivity;
 using Avalonia.Input;
-using Avalonia.Media; //brushes
+using Avalonia.Media; 
 using Avalonia.Platform.Storage;
 using Avalonia.Media.Imaging;
 using System;
@@ -14,20 +14,23 @@ namespace TEIGraphDataExtractor.Views;
 
 public partial class MainWindow : Window
 {
-    private string _activeCalibrationStep = ""; //hangi nokta secili
-    private int _calibrationClicksCount = 0; // ==4 olunca kalibre edilebilecek
+    private string _activeCalibrationStep = "";
+    private int _calibrationClicksCount = 0;
     private bool _isDrawModeActive = false;
     private System.Collections.Generic.Dictionary<string, Ellipse> _calibrationMarkers = new();
+    private System.Collections.Generic.Dictionary<string, TextBlock> _calibrationLabels = new();
+    private static readonly string[] _calibrationOrder = { "X1", "X2", "Y1", "Y2" };
     private Avalonia.Point _lastCollectedPoint = new Avalonia.Point(0, 0);
 
-    // [HEM GERİ AL HEM SEÇEREK SİLME İÇİN DEĞİŞTİ]: Stack yerine List kullanıyoruz!
+    // Görsel noktaları tuttuğumuz liste
     private System.Collections.Generic.List<Ellipse> _drawnDataDots = new();
 
-    private bool _isSingleAddModeActive = false; // add point ? 
-    private bool _isDeleteModeActive = false;    // [YENİ]: Tıklayarak seçip silme modu
-
+    private bool _isSingleAddModeActive = false; 
+    private bool _isDeleteModeActive = false;    
     private bool _isAdjustModeActive = false;
-    private Ellipse? _draggedDot = null; // fare ile sürüklenen nokta
+    private Ellipse? _draggedDot = null; 
+    private IBrush _currentPenColor = Brushes.Red;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -53,7 +56,7 @@ public partial class MainWindow : Window
             if (DataContext is MainWindowViewModel vm)
             {
                 vm.GraphImage = bitmap;
-                vm.SystemStatus = "Grafik yüklendi. Lütfen kalibrasyon adımlarına başlayınız.";
+                SetCalibrationStep("X1", "📍 Resim üzerinde X1 (Min) noktasını tıklayarak seçin...");
             }
         }
     }
@@ -69,20 +72,18 @@ public partial class MainWindow : Window
         if (DataContext is MainWindowViewModel vm) vm.SystemStatus = message;
     }
 
-       public void DrawingCanvas_PointerPressed(object? sender, PointerPressedEventArgs e)
+    public void DrawingCanvas_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        // Farenin tuval üzerindeki X ve Y pikselini al
         var point = e.GetPosition(DrawingCanvas);
-                // ====================================================================
-        // [1. ÖZELLİK]: TIKLAYARAK SEÇİP SİLME (AVCI MODU)
-        // Eğer Silme Modu aktifse, tuvalde tıkladığımız yere en yakın noktayı bul ve yok et!
-        // ====================================================================
+
+        // ==========================================
+        // SİLME MODU (AVCI)
+        // ==========================================
         if (_isDeleteModeActive && DataContext is MainWindowViewModel vmDelete)
         {
             Ellipse? closestDot = null;
-            double minDist = 15.0; // 15 piksel yarıçap toleransı (Hit-Box)
+            double minDist = 15.0; 
 
-            // Ekrandaki tüm kırmızı noktalardan farenin tıkladığı yere en yakın olanı buluyoruz
             foreach (var dot in _drawnDataDots)
             {
                 double dotX = Canvas.GetLeft(dot) + (dot.Width / 2);
@@ -96,7 +97,6 @@ public partial class MainWindow : Window
                 }
             }
 
-            // 15 piksel yakınımızda bir nokta varsa hem ekrandan hem listeden sil!
             if (closestDot != null)
             {
                 int targetIndex = _drawnDataDots.IndexOf(closestDot);
@@ -115,13 +115,16 @@ public partial class MainWindow : Window
             {
                 vmDelete.SystemStatus = "ℹ️ Tıkladığınız yerde silinecek bir nokta bulunamadı.";
             }
-            return; // Silme yapıldığı için aşağıdaki çizim kodlarına geçmeden çık!
+            return; 
         }
 
-if (_isAdjustModeActive)
+        // ==========================================
+        // TAŞIMA MODU
+        // ==========================================
+        if (_isAdjustModeActive)
         {
             Ellipse? closestDot = null;
-            double minDist = 15.0; // Delete modundaki gibi tolerans
+            double minDist = 15.0; 
 
             foreach (var dot in _drawnDataDots)
             {
@@ -144,12 +147,16 @@ if (_isAdjustModeActive)
             return;
         }
 
+        // ==========================================
+        // KALİBRASYON VE TEK NOKTA EKLEME MODU
+        // ==========================================
         if (DataContext is MainWindowViewModel vm)
         {
             if (!string.IsNullOrEmpty(_activeCalibrationStep))
             {
-                // İlgili pikseli ViewModel'in geçici hafızasına yaz
-                switch (_activeCalibrationStep)
+                string currentStep = _activeCalibrationStep;
+
+                switch (currentStep)
                 {
                     case "X1": vm.MinPixelX = point.X; break;
                     case "X2": vm.XMaxPixelX = point.X; break;
@@ -157,46 +164,83 @@ if (_isAdjustModeActive)
                     case "Y2": vm.YMaxPixelY = point.Y; break;
                 }
 
-                if (_calibrationMarkers.ContainsKey(_activeCalibrationStep))
+                if (_calibrationMarkers.ContainsKey(currentStep))
                 {
-                    DrawingCanvas.Children.Remove(_calibrationMarkers[_activeCalibrationStep]);
+                    DrawingCanvas.Children.Remove(_calibrationMarkers[currentStep]);
+                }
+                if (_calibrationLabels.ContainsKey(currentStep))
+                {
+                    DrawingCanvas.Children.Remove(_calibrationLabels[currentStep]);
                 }
 
-                IBrush markerColor = _activeCalibrationStep switch
+                IBrush markerColor = currentStep switch
                 {
-                    "X1" => Brushes.Cyan,         // Parlak Kırmızı
-                    "X2" => Brushes.DarkOrange,   // Turuncu
-                    "Y1" => Brushes.DodgerBlue,   // Canlı Mavi
-                    "Y2" => Brushes.LimeGreen,    // Fıstık Yeşili
+                    "X1" => Brushes.Cyan,         
+                    "X2" => Brushes.DarkOrange,   
+                    "Y1" => Brushes.DodgerBlue,   
+                    "Y2" => Brushes.LimeGreen,    
                     _ => Brushes.White
                 };
 
-                var marker = new Ellipse
-                {
-                    Width = 10,
-                    Height = 10,
-                    Fill = markerColor,
-                    Stroke = Brushes.White,
-                    StrokeThickness = 2
-                };
-
+                var marker = new Ellipse { Width = 10, Height = 10, Fill = markerColor, Stroke = Brushes.White, StrokeThickness = 2 };
                 Canvas.SetLeft(marker, point.X - 5);
                 Canvas.SetTop(marker, point.Y - 5);
                 DrawingCanvas.Children.Add(marker);
-                _calibrationMarkers[_activeCalibrationStep] = marker;
+                _calibrationMarkers[currentStep] = marker;
 
-                vm.SystemStatus = $"✅ {_activeCalibrationStep} Noktası Güncellendi ({point.X:F0}px, {point.Y:F0}px).";
-                _activeCalibrationStep = ""; // Seçimi sıfırla
+                var label = new TextBlock
+                {
+                    Text = currentStep, Foreground = markerColor, FontWeight = Avalonia.Media.FontWeight.Bold,
+                    FontSize = 13, Background = new SolidColorBrush(Color.FromArgb(160, 7, 11, 20))
+                };
+                Canvas.SetLeft(label, point.X + 8);
+                Canvas.SetTop(label, point.Y - 18);
+                DrawingCanvas.Children.Add(label);
+                _calibrationLabels[currentStep] = label;
+
+                vm.SystemStatus = $"✅ {currentStep} Noktası Güncellendi ({point.X:F0}px, {point.Y:F0}px).";
+                _activeCalibrationStep = ""; 
                 _calibrationClicksCount++;
 
-                // 4 Nokta da seçildiyse Backend servisine kalibrasyon komutunu gönder!
                 if (_calibrationClicksCount >= 4)
                 {
                     vm.SystemStatus = "4 kalibrasyon noktası başarı ile seçildi. 'Kalibrasyonu Tamamla' butonuna basabilirsiniz.";
                     _calibrationClicksCount = 0;
+
+                    foreach (var kvp in _calibrationLabels)
+                    {
+                        DrawingCanvas.Children.Remove(kvp.Value);
+                    }
+                    _calibrationLabels.Clear();
+                }
+                else
+                {
+                    string? nextStep = null;
+                    foreach (var step in _calibrationOrder)
+                    {
+                        if (!_calibrationMarkers.ContainsKey(step))
+                        {
+                            nextStep = step;
+                            break;
+                        }
+                    }
+
+                    if (nextStep != null)
+                    {
+                        string message = nextStep switch
+                        {
+                            "X1" => "📍 Şimdi X1 (Min) noktasını tıklayarak seçin...",
+                            "X2" => "📍 Şimdi X2 (Max) noktasını tıklayarak seçin...",
+                            "Y1" => "📍 Şimdi Y1 (Min) noktasını tıklayarak seçin...",
+                            "Y2" => "📍 Şimdi Y2 (Max) noktasını tıklayarak seçin...",
+                            _ => "📍 Sıradaki noktayı tıklayarak seçin..."
+                        };
+                        SetCalibrationStep(nextStep, $"✅ {currentStep} kaydedildi. {message}");
+                    }
                 }
                 return;
             }
+
             if (_isSingleAddModeActive && string.IsNullOrEmpty(_activeCalibrationStep))
             {
                 var newPoint = vm.CaptureStreamPoint(point.X, point.Y);
@@ -205,59 +249,28 @@ if (_isAdjustModeActive)
                     var dataDot = new Ellipse { Width = 4, Height = 4, Fill = Brushes.Red };
                     Canvas.SetLeft(dataDot, point.X - 2);
                     Canvas.SetTop(dataDot, point.Y - 2);
-                    DrawingCanvas.Children.Add(dataDot); // Ekrana ekle
-                    _drawnDataDots.Add(dataDot);         // [DEĞİŞTİ]: Push yerine Add
+                    DrawingCanvas.Children.Add(dataDot); 
+                    _drawnDataDots.Add(dataDot);         
 
                     vm.SystemStatus = $"📍 Nokta eklendi: X={newPoint.XValue:F3}, Y={newPoint.YValue:F3}";
                 }
             }
-        //Adjust modu! 
-
-       /* if(_isAdjustModeActive && DataContext is MainWindowViewModel vmAdjust)
-        {
-            Ellipse? closestDot = null;
-            double minDist=15.0;
-            foreach (var dot in _drawnDataDots)
-            {
-                double dotX = Canvas.GetLeft(dot) + (dot.Width / 2);
-                double dotY = Canvas.GetTop(dot) + (dot.Height / 2);
-                double dist = Math.Sqrt(Math.Pow(point.X - dotX, 2) + Math.Pow(point.Y - dotY, 2));
-                if (dist <= minDist) { minDist = dist; closestDot = dot; }
-            }
-            if (closestDot != null)
-            {
-                DrawingCanvas.Children.Remove(closestDot);
-                _drawnDataDots.Remove(closestDot);
-                vmAdjust.TryDeletePointAtPixel(point.X, point.Y, 15.0);
-            }
-            return;
-        }*/
-        
-
-
-
-        // ====================================================================
-
-        
-
-            
         }
-
     } 
+
     public void DrawingCanvas_PointerMoved(object? sender, PointerEventArgs e)
     {
         var point = e.GetPosition(DrawingCanvas);
 
-
-        if (_isAdjustModeActive && _draggedDot!=null && e.GetCurrentPoint(DrawingCanvas).Properties.IsLeftButtonPressed)
+        // Nokta Sürükleme (Adjust Mode)
+        if (_isAdjustModeActive && _draggedDot != null && e.GetCurrentPoint(DrawingCanvas).Properties.IsLeftButtonPressed)
         {
             Canvas.SetLeft(_draggedDot, point.X - (_draggedDot.Width / 2));
             Canvas.SetTop(_draggedDot, point.Y - (_draggedDot.Height / 2));
-            // Görsel kırmızı noktayı farenin ucuna taşı (Ortalamak için yarıçapı kadar çıkarıyoruz)
 
             int dotIndex = _drawnDataDots.IndexOf(_draggedDot);
 
-            if(dotIndex>=0 && DataContext is MainWindowViewModel vmMove && vmMove.Converter.IsCalibrated)
+            if(dotIndex >= 0 && DataContext is MainWindowViewModel vmMove && vmMove.Converter.IsCalibrated)
             {
                 var realCoords = vmMove.Converter.PixelToRealWorld(point.X, point.Y);
                 vmMove.LiveDataPoints[dotIndex].XValue = realCoords.RealX;
@@ -265,17 +278,16 @@ if (_isAdjustModeActive)
                 CoordinateText.Text = $"Taşınıyor... X: {realCoords.RealX:F3} | Y: {realCoords.RealY:F3}";
             }
             DrawingCanvas.InvalidateVisual();
-        
         }
 
+        // Çizim (Draw Mode)
         if (DataContext is MainWindowViewModel vm && vm.Converter.IsCalibrated)
         {
             var realCoords = vm.Converter.PixelToRealWorld(point.X, point.Y);
-            CoordinateText.Text = $"Gerçek X: {realCoords.RealX} | Gerçek Y: {realCoords.RealY}";
+            CoordinateText.Text = $"Gerçek X: {realCoords.RealX:F3} | Gerçek Y: {realCoords.RealY:F3}";
 
             var properties = e.GetCurrentPoint(DrawingCanvas).Properties;
 
-            // Silme modundayken yanlışlıkla çizim yapmamak için !_isDeleteModeActive kontrolü eklendi
             if (_isDrawModeActive && !_isDeleteModeActive && properties.IsLeftButtonPressed)
             {
                 double distance = Math.Sqrt(Math.Pow(point.X - _lastCollectedPoint.X, 2) + Math.Pow(point.Y - _lastCollectedPoint.Y, 2));
@@ -289,7 +301,7 @@ if (_isAdjustModeActive)
                         Canvas.SetTop(dataDot, point.Y - 2);
 
                         DrawingCanvas.Children.Add(dataDot);
-                        _drawnDataDots.Add(dataDot); // [DEĞİŞTİ]: Push yerine Add
+                        _drawnDataDots.Add(dataDot); 
                         _lastCollectedPoint = point;
                     }
                 }
@@ -301,14 +313,8 @@ if (_isAdjustModeActive)
         }
 
         // ==========================================
-        // 🔍 BÜYÜTEÇ MOTORU (CROP TABANLI - SAĞLAM YÖNTEM)
+        // BÜYÜTEÇ MOTORU (CROP TABANLI)
         // ==========================================
-        // [YENİ YAKLAŞIM]: Transform/Scale/Translate matematiği Viewbox ve zoom
-        // butonlarıyla birlikte güvenilmez sonuç verdiği için tamamen terk edildi.
-        // Bunun yerine kaynak resimden farenin GERÇEK piksel konumunu merkez alan
-        // küçük bir dikdörtgen KESİYORUZ (CroppedBitmap) ve doğrudan büyüteç
-        // kutusuna basıyoruz. Böylece herhangi bir Transform/Viewbox/Scroll
-        // hesaplama hatası büyüteç sonucunu etkileyemez.
         var magnifierImage = this.FindControl<Image>("MagnifierImage");
         var magnifierGrid = this.FindControl<Grid>("MagnifierGrid");
 
@@ -320,34 +326,27 @@ if (_isAdjustModeActive)
             double imgPixelW = vmMag.GraphImage.PixelSize.Width;
             double imgPixelH = vmMag.GraphImage.PixelSize.Height;
 
-            double boxW = DrawingCanvas.Bounds.Width;   // Ana görüntü kutusunun genişliği (örn. 800)
-            double boxH = DrawingCanvas.Bounds.Height;  // Ana görüntü kutusunun yüksekliği (örn. 600)
+            double boxW = DrawingCanvas.Bounds.Width;   
+            double boxH = DrawingCanvas.Bounds.Height;  
 
-            // 1. Stretch="Uniform" resmi kutunun İÇİNDE hangi boyutta ve hangi
-            //    ofsetle (letterbox boşluğuyla) çizdiğini hesapla
             double uniformScale = Math.Min(boxW / imgPixelW, boxH / imgPixelH);
             double renderedW = imgPixelW * uniformScale;
             double renderedH = imgPixelH * uniformScale;
             double offsetX = (boxW - renderedW) / 2.0;
             double offsetY = (boxH - renderedH) / 2.0;
 
-            // 2. Farenin GERÇEK RESMİN İÇİNDEKİ yüzdesi (0.0 - 1.0)
             double percentX = (point.X - offsetX) / renderedW;
             double percentY = (point.Y - offsetY) / renderedH;
             percentX = Math.Clamp(percentX, 0.0, 1.0);
             percentY = Math.Clamp(percentY, 0.0, 1.0);
 
-            // 3. Bu yüzdeyi KAYNAK BİTMAP'İN GERÇEK PİKSEL koordinatına çevir
             double imagePixelX = percentX * imgPixelW;
             double imagePixelY = percentY * imgPixelH;
 
-            // 4. Büyüteç kutusunun etrafında ne kadar alan göstereceğimizi belirle.
-            //    zoomFactor = "1 kaynak pikseli, büyüteçte kaç piksel olarak görünsün?"
             const double zoomFactor = 4.0;
             double cropW = magnifierGrid.Bounds.Width / zoomFactor;
             double cropH = magnifierGrid.Bounds.Height / zoomFactor;
 
-            // Kırpma alanı resmin sınırlarını taşmasın
             cropW = Math.Min(cropW, imgPixelW);
             cropH = Math.Min(cropH, imgPixelH);
 
@@ -361,71 +360,98 @@ if (_isAdjustModeActive)
             int cropWidth = (int)Math.Round(cropW);
             int cropHeight = (int)Math.Round(cropH);
 
-            // Güvenlik: sıfır veya negatif boyutta kırpma yapmaya çalışma
             if (cropWidth > 0 && cropHeight > 0 &&
                 cropX + cropWidth <= imgPixelW && cropY + cropHeight <= imgPixelH)
             {
                 var sourceRect = new Avalonia.PixelRect(cropX, cropY, cropWidth, cropHeight);
                 magnifierImage.Source = new CroppedBitmap(vmMag.GraphImage, sourceRect);
 
-                // ==========================================
-                // 🔴 KIRMIZI NOKTALARI / KALİBRASYON İŞARETLERİNİ DE BÜYÜTEÇTE GÖSTER
-                // ==========================================
-                // [YENİ]: Büyüteç şimdiye kadar sadece resmi gösteriyordu, üstüne çizdiğin
-                // noktaları (Ellipse'ler DrawingCanvas'ın çocukları) göstermiyordu.
-                // Burada: kırpma alanının (cropX,cropY,cropWidth,cropHeight) canvas-piksel
-                // karşılığını buluyoruz, o alanın içine düşen her noktayı küçültülmüş
-                // boyutta MagnifierOverlayCanvas üzerine yeniden çiziyoruz.
-
                 var overlayCanvas = this.FindControl<Canvas>("MagnifierOverlayCanvas");
                 if (overlayCanvas != null)
                 {
                     overlayCanvas.Children.Clear();
 
-                    // Kırpma alanının (image-piksel) canvas-piksel (0-800/0-600) karşılığı
                     double cropCanvasLeft = offsetX + (cropX * uniformScale);
                     double cropCanvasTop = offsetY + (cropY * uniformScale);
                     double cropCanvasWidth = cropWidth * uniformScale;
                     double cropCanvasHeight = cropHeight * uniformScale;
-
-                    // 1 canvas-pikseli, büyüteç panelinde kaç piksele denk geliyor?
                     double overlayScale = zoomFactor / uniformScale;
 
                     foreach (var child in DrawingCanvas.Children)
                     {
-                        if (child is not Ellipse dot) continue;
-
-                        double dotCenterX = Canvas.GetLeft(dot) + (dot.Width / 2);
-                        double dotCenterY = Canvas.GetTop(dot) + (dot.Height / 2);
-
-                        bool isInsideCrop =
-                            dotCenterX >= cropCanvasLeft && dotCenterX <= cropCanvasLeft + cropCanvasWidth &&
-                            dotCenterY >= cropCanvasTop && dotCenterY <= cropCanvasTop + cropCanvasHeight;
-
-                        if (!isInsideCrop) continue;
-
-                        double panelX = (dotCenterX - cropCanvasLeft) * overlayScale;
-                        double panelY = (dotCenterY - cropCanvasTop) * overlayScale;
-                        double miniWidth = Math.Max(2, dot.Width * overlayScale);
-                        double miniHeight = Math.Max(2, dot.Height * overlayScale);
-
-                        var miniDot = new Ellipse
+                        if (child is Ellipse dot)
                         {
-                            Width = miniWidth,
-                            Height = miniHeight,
-                            Fill = dot.Fill,
-                            Stroke = dot.Stroke,
-                            StrokeThickness = dot.StrokeThickness
-                        };
-                        Canvas.SetLeft(miniDot, panelX - (miniWidth / 2));
-                        Canvas.SetTop(miniDot, panelY - (miniHeight / 2));
-                        overlayCanvas.Children.Add(miniDot);
+                            double dotCenterX = Canvas.GetLeft(dot) + (dot.Width / 2);
+                            double dotCenterY = Canvas.GetTop(dot) + (dot.Height / 2);
+
+                            bool isInsideCrop =
+                                dotCenterX >= cropCanvasLeft && dotCenterX <= cropCanvasLeft + cropCanvasWidth &&
+                                dotCenterY >= cropCanvasTop && dotCenterY <= cropCanvasTop + cropCanvasHeight;
+
+                            if (!isInsideCrop) continue;
+
+                            double panelX = (dotCenterX - cropCanvasLeft) * overlayScale;
+                            double panelY = (dotCenterY - cropCanvasTop) * overlayScale;
+                            double miniWidth = Math.Max(2, dot.Width * overlayScale);
+                            double miniHeight = Math.Max(2, dot.Height * overlayScale);
+
+                            var miniDot = new Ellipse
+                            {
+                                Width = miniWidth, Height = miniHeight, Fill = dot.Fill,
+                                Stroke = dot.Stroke, StrokeThickness = dot.StrokeThickness
+                            };
+                            Canvas.SetLeft(miniDot, panelX - (miniWidth / 2));
+                            Canvas.SetTop(miniDot, panelY - (miniHeight / 2));
+                            overlayCanvas.Children.Add(miniDot);
+                        }
+                        else if (child is TextBlock label)
+                        {
+                            double labelLeft = Canvas.GetLeft(label);
+                            double labelTop = Canvas.GetTop(label);
+
+                            bool isInsideCrop =
+                                labelLeft >= cropCanvasLeft && labelLeft <= cropCanvasLeft + cropCanvasWidth &&
+                                labelTop >= cropCanvasTop && labelTop <= cropCanvasTop + cropCanvasHeight;
+
+                            if (!isInsideCrop) continue;
+
+                            double panelX = (labelLeft - cropCanvasLeft) * overlayScale;
+                            double panelY = (labelTop - cropCanvasTop) * overlayScale;
+
+                            var miniLabel = new TextBlock
+                            {
+                                Text = label.Text, Foreground = label.Foreground,
+                                Background = label.Background, FontWeight = label.FontWeight,
+                                FontSize = Math.Max(8, label.FontSize * overlayScale)
+                            };
+                            Canvas.SetLeft(miniLabel, panelX);
+                            Canvas.SetTop(miniLabel, panelY);
+                            overlayCanvas.Children.Add(miniLabel);
+                        }
                     }
                 }
             }
         }
-
     }
+
+    public void DrawingCanvas_PointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (_draggedDot != null)
+        {
+            _draggedDot = null; 
+            e.Pointer.Capture(null); 
+
+            if (DataContext is MainWindowViewModel vm)
+            {
+                vm.SystemStatus = "✅ Nokta başarıyla yeni konumuna taşındı.";
+            }
+            DrawingCanvas.InvalidateVisual();
+        }
+    }
+
+    // ==========================================
+    // BUTON AKSİYONLARI (MOD GEÇİŞLERİ)
+    // ==========================================
 
     public void DrawModeButton_Click(object? sender, RoutedEventArgs e)
     {
@@ -439,92 +465,11 @@ if (_isAdjustModeActive)
             }
 
             _isDrawModeActive = true;
-            if (_isDrawModeActive) { _isSingleAddModeActive = false; _isDeleteModeActive = false; } // Mod çakışması önlendi
+            if (_isDrawModeActive) { _isSingleAddModeActive = false; _isDeleteModeActive = false; _isAdjustModeActive = false; } 
 
             vm.SystemStatus = _isDrawModeActive
                 ? "✒️ Kalem Modu AKTİF. Farenin sol tuşuna basılı tutarak çizim yapın."
                 : "✒️ Kalem Modu KAPATILDI.";
-        }
-    }
-
-    public void CalibrateButton_Click(object? sender, RoutedEventArgs e)
-    {
-        if (DataContext is MainWindowViewModel vm)
-        {
-            bool success = vm.TryCalibrate();
-        }
-    }
-
-    public void ResetButton_Click(object? sender, RoutedEventArgs e)
-    {
-        if (DataContext is MainWindowViewModel vm)
-        {
-            vm.RealXMin = 0.0;
-            vm.RealXMax = 0.0;
-            vm.RealYMin = 0.0;
-            vm.RealYMax = 0.0;
-            vm.MinPixelX = 0.0;
-            vm.MinPixelY = 0.0;
-            vm.XMaxPixelX = 0.0;
-            vm.YMaxPixelY = 0.0;
-
-            DrawingCanvas.Children.Clear();
-            _calibrationMarkers.Clear();
-            _drawnDataDots.Clear();
-            vm.LiveDataPoints.Clear();
-            vm._currentOrderIndex = 1;
-
-            _calibrationClicksCount = 0;
-            _activeCalibrationStep = "";
-            _isDrawModeActive = false;
-            _isSingleAddModeActive = false;
-            _isDeleteModeActive = false; // Sıfırlanırken silme modu da kapanır
-
-            vm.SystemStatus = "🔄 Tüm kalibrasyon ve grafik verileri başarıyla sıfırlandı.";
-        }
-    }
-
-    // ====================================================================
-    // [2. ÖZELLİK + FULL ENTEGRE]: HEM GERİ AL (UNDO) HEM SEÇEREK SİL (AVCI MODU)
-    // ====================================================================
-public void TekDeletePointButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-{
-    if (DataContext is MainWindowViewModel vm)
-    {
-        if (_drawnDataDots.Count > 0 && vm.LiveDataPoints.Count > 0)
-        {
-            int lastIndex = _drawnDataDots.Count - 1;
-            var lastDot = _drawnDataDots[lastIndex];
-
-            DrawingCanvas.Children.Remove(lastDot);
-            _drawnDataDots.RemoveAt(lastIndex);
-
-            vm.LiveDataPoints.RemoveAt(vm.LiveDataPoints.Count - 1);
-            vm._currentOrderIndex--;
-
-            vm.SystemStatus = $"↩️ Son nokta geri alındı. Kalan nokta: {vm.LiveDataPoints.Count}";
-        }
-        else
-        {
-            vm.SystemStatus = "ℹ️ Geri alınacak nokta yok.";
-        }
-    }
-}
-
-    public void DeletePointButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-    {
-        if (DataContext is MainWindowViewModel vm)
-        {
-
-            // 2. ÖZELLİK: AVCI MODUNU (SEÇEREK SİLME) AÇ / KAPAT
-            _isDeleteModeActive = true;
-
-            // Çakışma olmasın diye diğer çizim modlarını kapatıyoruz
-            if (_isDeleteModeActive) { _isDrawModeActive = false; _isSingleAddModeActive = false; }
-
-            vm.SystemStatus = _isDeleteModeActive
-                ? "🎯 SİLME MODU AKTİF: Noktalara tıklayarak silebilirsiniz."
-            : "✏️ Silme Modu kapatıldı.";
         }
     }
 
@@ -540,59 +485,113 @@ public void TekDeletePointButton_Click(object? sender, Avalonia.Interactivity.Ro
             }
 
             _isSingleAddModeActive = true;
-            if (_isSingleAddModeActive) { _isAdjustModeActive = false; _isDrawModeActive = false; _isDeleteModeActive = false; } // Mod çakışması önlendi
+            if (_isSingleAddModeActive) { _isAdjustModeActive = false; _isDrawModeActive = false; _isDeleteModeActive = false; } 
 
             vm.SystemStatus = _isSingleAddModeActive
                 ? "📍 Tek Nokta Ekleme AKTİF. Resme tıklayarak hassas nokta ekleyebilirsiniz."
                 : "📍 Tek Nokta Ekleme KAPATILDI.";
         }
     }
+
+    public void AdjustModeButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            _isAdjustModeActive = true;
+            if (_isAdjustModeActive) { _isDrawModeActive = false; _isDeleteModeActive = false; _isSingleAddModeActive = false; }
+            
+            vm.SystemStatus = _isAdjustModeActive 
+                ? "🖐️ TAŞIMA MODU AKTİF: Yanlış noktaları farenizle sürükleyip düzeltebilirsiniz." 
+                : "🖐️ Taşıma Modu kapatıldı.";
+        }
+    }
+
+    public void DeletePointButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            _isDeleteModeActive = true;
+            if (_isDeleteModeActive) { _isDrawModeActive = false; _isSingleAddModeActive = false; _isAdjustModeActive = false; }
+
+            vm.SystemStatus = _isDeleteModeActive
+                ? "🎯 SİLME MODU AKTİF: Noktalara tıklayarak silebilirsiniz."
+                : "✏️ Silme Modu kapatıldı.";
+        }
+    }
+
+    public void TekDeletePointButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            if (_drawnDataDots.Count > 0 && vm.LiveDataPoints.Count > 0)
+            {
+                int lastIndex = _drawnDataDots.Count - 1;
+                var lastDot = _drawnDataDots[lastIndex];
+
+                DrawingCanvas.Children.Remove(lastDot);
+                _drawnDataDots.RemoveAt(lastIndex);
+
+                vm.LiveDataPoints.RemoveAt(vm.LiveDataPoints.Count - 1);
+                vm._currentOrderIndex--;
+
+                vm.SystemStatus = $"↩️ Son nokta geri alındı. Kalan nokta: {vm.LiveDataPoints.Count}";
+            }
+            else
+            {
+                vm.SystemStatus = "ℹ️ Geri alınacak nokta yok.";
+            }
+        }
+    }
+
     public void ClearAllPointsButton_Click(object? sender, RoutedEventArgs e)
     {
         if (DataContext is MainWindowViewModel vm)
         {
-            // 1. Senin yazdığın sayacı (OrderIndex) 1'e çeken ve matematiksel listeyi boşaltan metodu çağır
             vm.ClearStreamData();
-
-            // 2. Ekrandaki tüm kırmızı/sarı noktaları söküp at (Foreach ile dolaşıp Canvas'tan siliyoruz)
             foreach (var dot in _drawnDataDots)
             {
                 DrawingCanvas.Children.Remove(dot);
             }
-
-            // 3. Görsel Listeyi tek hamlede tertemiz yap (Pop kullanmaya gerek kalmadı!)
             _drawnDataDots.Clear();
-
-            // 4. Kullanıcıya sayacın sıfırlandığını arayüzde hissettir
             vm.SystemStatus = $"🧹 Tüm veri noktaları temizlendi. Sayaç başa alındı! (Mevcut Nokta: {vm.LiveDataPoints.Count})";
         }
     }
-    public void ZoomInButton_Click(object? sender, RoutedEventArgs e)
-    {
-        // 🚀 KURŞUN GEÇİRMEZ YÖNTEM: "Git XAML içinden MainZoomGrid'i zorla bul!"
-        var mainZoomGrid = this.FindControl<Grid>("MainZoomGrid");
 
-        if (mainZoomGrid?.RenderTransform is ScaleTransform scale)
+    public void CalibrateButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
         {
-            scale.ScaleX += 0.2;
-            scale.ScaleY += 0.2;
+            bool success = vm.TryCalibrate();
         }
     }
 
-    public void ZoomOutButton_Click(object? sender, RoutedEventArgs e)
+    public void ResetButton_Click(object? sender, RoutedEventArgs e)
     {
-        var mainZoomGrid = this.FindControl<Grid>("MainZoomGrid");
-
-        if (mainZoomGrid?.RenderTransform is ScaleTransform scale)
+        if (DataContext is MainWindowViewModel vm)
         {
-            if (scale.ScaleX > 0.4)
-            {
-                scale.ScaleX -= 0.2;
-                scale.ScaleY -= 0.2;
-            }
+            vm.RealXMin = 0.0; vm.RealXMax = 0.0;
+            vm.RealYMin = 0.0; vm.RealYMax = 0.0;
+            vm.MinPixelX = 0.0; vm.MinPixelY = 0.0;
+            vm.XMaxPixelX = 0.0; vm.YMaxPixelY = 0.0;
+
+            DrawingCanvas.Children.Clear();
+            _calibrationMarkers.Clear();
+            _calibrationLabels.Clear();
+            _drawnDataDots.Clear();
+            vm.LiveDataPoints.Clear();
+            vm._currentOrderIndex = 1;
+
+            _calibrationClicksCount = 0;
+            _activeCalibrationStep = "";
+            _isDrawModeActive = false;
+            _isSingleAddModeActive = false;
+            _isDeleteModeActive = false; 
+            _isAdjustModeActive = false;
+
+            SetCalibrationStep("X1", "🔄 Tüm kalibrasyon ve grafik verileri sıfırlandı. 📍 X1 (Min) noktasını tıklayarak seçin...");
         }
     }
-    
+
     public void SelectZGroupButton_Click(object? sender, RoutedEventArgs e)
     {
         if (sender is Button btn && btn.Tag is ZGroupItem clickedGroup)
@@ -604,55 +603,17 @@ public void TekDeletePointButton_Click(object? sender, Avalonia.Interactivity.Ro
         }
     }
 
-    public void DrawingCanvas_PointerReleased(object? sender, PointerReleasedEventArgs e)
+    public void ViewDataButton_Click(object? sender, RoutedEventArgs e)
     {
-        if (_draggedDot != null)
+        var tabControl = this.FindControl<TabControl>("RightTabControl");
+        if (tabControl != null)
         {
-            _draggedDot=null; //serbest bırak
-            e.Pointer.Capture(null); //fare kilidini kaldır
-
+            tabControl.SelectedIndex = 1; 
             if (DataContext is MainWindowViewModel vm)
             {
-                vm.SystemStatus = "✅ Nokta başarıyla yeni konumuna taşındı.";
+                vm.SystemStatus = "📊 Veri tablosu görüntülendi.";
             }
-            DrawingCanvas.InvalidateVisual();
         }
-    }
-
-   public void AdjustModeButton_Click(object? sender, RoutedEventArgs e)
-    {
-        if (DataContext is MainWindowViewModel vm)
-        {
-            _isAdjustModeActive = true;
-            if (_isAdjustModeActive)
-            {
-                _isDrawModeActive=false;
-                _isDeleteModeActive=false;
-                _isSingleAddModeActive=false;
-            }
-            vm.SystemStatus=_isAdjustModeActive 
-                ? "🖐️ TAŞIMA MODU AKTİF: Yanlış noktaları farenizle sürükleyip düzeltebilirsiniz." 
-                : "🖐️ Taşıma Modu kapatıldı.";
-
-        }
-    }
-
-        public void ViewDataButton_Click(object? sender, RoutedEventArgs e)
-        {
-            // XAML'daki TabControl'ü bul
-            var tabControl = this.FindControl<TabControl>("RightTabControl");
-            
-            if (tabControl != null)
-            {
-                // 0 -> Kalibrasyon Sekmesi
-                // 1 -> Çıktı & Veri Sekmesi
-                tabControl.SelectedIndex = 1; 
-                
-                if (DataContext is MainWindowViewModel vm)
-                {
-                    vm.SystemStatus = "📊 Veri tablosu görüntülendi.";
-                }
-            }
     }
 
     public async void ExportCsvButton_Click(object? sender, RoutedEventArgs e)
@@ -680,4 +641,59 @@ public void TekDeletePointButton_Click(object? sender, Avalonia.Interactivity.Ro
         }
     }
 
+    // ==========================================
+    // ZOOM MOTORU (LAYOUT TRANSFORM UYUMLU)
+    // ==========================================
+
+    public void ZoomInButton_Click(object? sender, RoutedEventArgs e)
+    {
+        AdjustZoom(0.2);
+    }
+
+    public void ZoomOutButton_Click(object? sender, RoutedEventArgs e)
+    {
+        AdjustZoom(-0.2);
+    }
+
+    public void MainZoomScrollViewer_PointerWheelChanged(object? sender, PointerWheelEventArgs e)
+    {
+        var keyModifiers = e.KeyModifiers;
+        bool isZoomGesture = keyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Control);
+
+        if (isZoomGesture)
+        {
+            double delta = e.Delta.Y > 0 ? 0.2 : -0.2;
+            AdjustZoom(delta);
+            e.Handled = true; 
+        }
+    }
+
+    private void AdjustZoom(double delta)
+    {
+        var zoomControl = this.FindControl<LayoutTransformControl>("ZoomTransformControl");
+        var mainZoomScrollViewer = this.FindControl<ScrollViewer>("MainZoomScrollViewer"); 
+
+        if (zoomControl?.LayoutTransform is ScaleTransform scale)
+        {
+            double newScale = scale.ScaleX + delta;
+            newScale = Math.Clamp(newScale, 0.4, 5.0);
+            
+            scale.ScaleX = newScale;
+            scale.ScaleY = newScale;
+
+            if (mainZoomScrollViewer != null)
+            {
+                if (newScale > 1.0)
+                {
+                    mainZoomScrollViewer.HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto;
+                    mainZoomScrollViewer.VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto;
+                }
+                else
+                {
+                    mainZoomScrollViewer.HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled;
+                    mainZoomScrollViewer.VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled;
+                }
+            }
+        }
+    }
 }

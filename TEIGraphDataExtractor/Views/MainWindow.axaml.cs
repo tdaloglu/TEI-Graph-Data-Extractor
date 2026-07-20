@@ -285,6 +285,12 @@ public partial class MainWindow : Window
         // Çizim (Draw Mode)
         if (DataContext is MainWindowViewModel vm && vm.Converter.IsCalibrated)
         {
+            if (vm.ZGroups.Count == 0)
+            {
+                vm.SystemStatus = "⚠️ UYARI: Hiçbir Z grubu bulunmuyor! Çizim yapabilmek için lütfen en az 1 grup ekleyin.";
+                _isDrawModeActive = false;
+                return;
+            }
             var realCoords = vm.Converter.PixelToRealWorld(point.X, point.Y);
             CoordinateText.Text = $"Gerçek X: {realCoords.RealX:F3} | Gerçek Y: {realCoords.RealY:F3}";
 
@@ -466,6 +472,13 @@ public partial class MainWindow : Window
                 return;
             }
 
+            if (vm.ZGroups.Count == 0)
+            {
+                vm.SystemStatus = "⚠️ UYARI: Hiçbir Z grubu bulunmuyor! Çizim yapabilmek için lütfen en az 1 grup ekleyin.";
+                _isDrawModeActive = false;
+                return;
+            }
+
             _isDrawModeActive = true;
             if (_isDrawModeActive) { _isSingleAddModeActive = false; _isDeleteModeActive = false; _isAdjustModeActive = false; } 
 
@@ -482,6 +495,14 @@ public partial class MainWindow : Window
             if (!vm.Converter.IsCalibrated)
             {
                 vm.SystemStatus = "⚠️ Önce kalibrasyonu tamamlamalısınız!";
+                _isSingleAddModeActive = false;
+                return;
+            }
+
+            if (vm.ZGroups.Count == 0)
+            {
+                vm.SystemStatus = "⚠️ UYARI: Hiçbir Z grubu bulunmuyor! Çizim yapabilmek için lütfen en az 1 grup ekleyin.";
+                _isDrawModeActive = false;
                 _isSingleAddModeActive = false;
                 return;
             }

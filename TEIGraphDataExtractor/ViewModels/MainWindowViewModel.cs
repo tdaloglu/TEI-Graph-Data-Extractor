@@ -214,7 +214,7 @@ public bool TryCalibrate()
 
     public DataPoint? CaptureStreamPoint(double pixelX, double pixelY)
     {
-        if (!Converter.IsCalibrated)
+        if (!Converter.IsCalibrated && _groupCount == 0)
         {
             Console.WriteLine("[UYARI] Çizim yapılmaya çalışıldı ama sistem henüz KALİBRE EDİLMEMİŞ!");
             return null;

@@ -1,4 +1,4 @@
-<img width="1342" height="731" alt="image" src="https://github.com/user-attachments/assets/e4de719f-3346-47ea-8424-740f5a55b910" />
+<img width="1343" height="737" alt="image" src="https://github.com/user-attachments/assets/0e4cb3ee-1325-4e19-880e-0ad964b575ee" /><img width="1342" height="731" alt="image" src="https://github.com/user-attachments/assets/e4de719f-3346-47ea-8424-740f5a55b910" />
 # 📈 TEI Graph Data Extractor
 
 ![C#](https://img.shields.io/badge/c%23-%23239120.svg?style=for-the-badge&logo=c-sharp&logoColor=white)
@@ -21,6 +21,8 @@ TEI Graph Data Extractor, mühendislik grafiklerinden ve görsellerden hassas (X
 *   **💾 Dışa Aktarım ve Arşivleme:** Toplanan verileri SQLite/yerel veritabanında saklama ve tek tıkla `.csv` formatında dışa aktarma.
 
 <img width="1336" height="730" alt="image" src="https://github.com/user-attachments/assets/3c671407-66ea-4161-bce5-ba5c9fa6c864" />
+
+<img width="1343" height="737" alt="image" src="https://github.com/user-attachments/assets/be756ace-2b16-4804-916c-2794075cbac5" />
 
 
 
@@ -52,6 +54,8 @@ Projeyi kendi bilgisayarınızda çalıştırmak için aşağıdaki adımları i
    ```
 
    👩‍💻 Geliştiriciler
+
+   
 Başak Heybeli - ODTÜ Bilgisayar Mühendisliği - https://github.com/heybasakk
 
 Tayanç Daloğlu - ODTÜ Bilgisayar Mühendisliği - https://github.com/tdaloglu

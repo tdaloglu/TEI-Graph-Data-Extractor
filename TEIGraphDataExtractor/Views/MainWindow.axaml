@@ -127,6 +127,52 @@
                     <TextBlock Text="{Binding SystemStatus}" Foreground="#FFA726" FontSize="12" FontWeight="Bold" Margin="0,5,0,0"/>
                 </StackPanel>
             </Border>
+
+            <Border Background="#B2000000" IsVisible="{Binding ShowGroupWarning}" ZIndex="999">
+                <Border Background="#101D36" BorderBrush="#E53935" BorderThickness="2" CornerRadius="8"
+                        HorizontalAlignment="Center" VerticalAlignment="Center" Padding="25" Width="360">
+                    <StackPanel>
+                        <TextBlock Text="⚠️ LÜTFEN BİR GRUP SEÇİNİZ" Foreground="#E53935" FontWeight="Bold" FontSize="16" Margin="0,0,0,12" HorizontalAlignment="Center"/>
+                        
+                        <TextBlock Text="Çizim (kalem) veya nokta ekleme araçlarını kullanmadan önce sol taraftaki menüden çalışmak istediğiniz Z-Değeri grubunu 'Seç' butonuna tıklayarak belirlemelisiniz."
+                                   Foreground="White" TextWrapping="Wrap" Margin="0,0,0,25" TextAlignment="Center" FontSize="13"/>
+                        
+                        <Button Content="Tamam" Click="CloseWarningPopup_Click"
+                                Background="#2D3B55" Foreground="White"
+                                HorizontalAlignment="Right" Padding="25,8" CornerRadius="4" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+            </Border>
+            <Border Background="#B2000000" IsVisible="{Binding ShowCalibrationWarning}" ZIndex="999">
+                <Border Background="#101D36" BorderBrush="#E53935" BorderThickness="2" CornerRadius="8"
+                        HorizontalAlignment="Center" VerticalAlignment="Center" Padding="25" Width="380">
+                    <StackPanel>
+                        <TextBlock Text="⚠️ KALİBRASYON EKSİK" Foreground="#E53935" FontWeight="Bold" FontSize="16" Margin="0,0,0,12" HorizontalAlignment="Center"/>
+                        
+                        <TextBlock Text="Çizim veya nokta ekleme işlemlerine başlamadan önce sağ taraftaki 'KALİBRASYON' menüsünden resim üzerindeki 4 noktayı (X1, X2, Y1, Y2) seçmeli, gerçek değerlerini girmeli ve 'KALİBRASYONU TAMAMLA' butonuna basmalısınız."
+                                   Foreground="White" TextWrapping="Wrap" Margin="0,0,0,25" TextAlignment="Center" FontSize="13"/>
+                        
+                        <Button Content="Tamam" Click="CloseCalibrationWarningPopup_Click"
+                                Background="#2D3B55" Foreground="White"
+                                HorizontalAlignment="Right" Padding="25,8" CornerRadius="4" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+            </Border>
+            <Border Background="#B2000000" IsVisible="{Binding ShowNoGroupWarning}" ZIndex="999">
+                <Border Background="#101D36" BorderBrush="#FFA726" BorderThickness="2" CornerRadius="8"
+                        HorizontalAlignment="Center" VerticalAlignment="Center" Padding="25" Width="360">
+                    <StackPanel>
+                        <TextBlock Text="⚠️ GRUP BULUNAMADI" Foreground="#FFA726" FontWeight="Bold" FontSize="16" Margin="0,0,0,12" HorizontalAlignment="Center"/>
+                        
+                        <TextBlock Text="Çizim yapabilmek için en az 1 tane Z-Değeri grubuna ihtiyacınız var. Lütfen sol menüdeki 'Toplam Grup Sayısı'nı artırarak bir grup oluşturun ve seçin."
+                                   Foreground="White" TextWrapping="Wrap" Margin="0,0,0,25" TextAlignment="Center" FontSize="13"/>
+                        
+                        <Button Content="Tamam" Click="CloseNoGroupWarningPopup_Click"
+                                Background="#2D3B55" Foreground="White"
+                                HorizontalAlignment="Right" Padding="25,8" CornerRadius="4" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+            </Border>
         </Grid>
 
         <Border Grid.Column="3" Background="#101D36" BorderBrush="#2D3B55" BorderThickness="1,0,0,0">

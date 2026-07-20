@@ -289,6 +289,7 @@ public partial class MainWindow : Window
             {
                 vm.SystemStatus = "⚠️ UYARI: Hiçbir Z grubu bulunmuyor! Çizim yapabilmek için lütfen en az 1 grup ekleyin.";
                 _isDrawModeActive = false;
+                vm.TriggerNoGroupWarning();
                 return;
             }
             var realCoords = vm.Converter.PixelToRealWorld(point.X, point.Y);
@@ -469,13 +470,23 @@ public partial class MainWindow : Window
             {
                 vm.SystemStatus = "Önce kalibrasyonu tamamlamalısınız!";
                 _isDrawModeActive = false;
+                vm.TriggerCalibrationWarning();
+                vm.TriggerNoGroupWarning();
                 return;
             }
+            
 
             if (vm.ZGroups.Count == 0)
             {
                 vm.SystemStatus = "⚠️ UYARI: Hiçbir Z grubu bulunmuyor! Çizim yapabilmek için lütfen en az 1 grup ekleyin.";
                 _isDrawModeActive = false;
+                return;
+            }
+            if (!vm.HasSelectedGroup)
+            {
+                vm.SystemStatus = "⚠️ UYARI: Lütfen önce bir grup seçiniz!";
+                _isDrawModeActive = false;
+                vm.TriggerGroupWarning(); // Uyarı penceresini ve zamanlayıcıyı tetikle
                 return;
             }
 
@@ -496,6 +507,8 @@ public partial class MainWindow : Window
             {
                 vm.SystemStatus = "⚠️ Önce kalibrasyonu tamamlamalısınız!";
                 _isSingleAddModeActive = false;
+                vm.TriggerCalibrationWarning();
+                vm.TriggerNoGroupWarning();
                 return;
             }
 
@@ -504,6 +517,13 @@ public partial class MainWindow : Window
                 vm.SystemStatus = "⚠️ UYARI: Hiçbir Z grubu bulunmuyor! Çizim yapabilmek için lütfen en az 1 grup ekleyin.";
                 _isDrawModeActive = false;
                 _isSingleAddModeActive = false;
+                return;
+            }
+            if (!vm.HasSelectedGroup)
+            {
+                vm.SystemStatus = "⚠️ UYARI: Lütfen önce bir grup seçiniz!";
+                _isSingleAddModeActive = false;
+                vm.TriggerGroupWarning(); // Uyarı penceresini ve zamanlayıcıyı tetikle
                 return;
             }
 
@@ -758,5 +778,28 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
+    }
+
+    // kullanıcı penceredeki tamama basarsa 10 saniyeyi beklemeden hemen kapat
+    public void CloseWarningPopup_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            vm.CloseWarning();
+        }
+    }
+    public void CloseCalibrationWarningPopup_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            vm.CloseCalibrationWarning();
+        }
+    }
+    public void CloseNoGroupWarningPopup_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            vm.CloseNoGroupWarning();
+        }
     }
 }

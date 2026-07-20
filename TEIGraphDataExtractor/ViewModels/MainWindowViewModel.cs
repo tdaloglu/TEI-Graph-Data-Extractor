@@ -187,6 +187,27 @@ public partial class MainWindowViewModel : ViewModelBase
         IsDeleteModeActive = !IsDeleteModeActive;
     }
 
+private bool _showCalibrationWarning = false;
+public bool ShowCalibrationWarning
+    {
+        get => _showCalibrationWarning;
+        set { _showCalibrationWarning=value; RaisePropertyChanged(); }
+    }
+public async void TriggerCalibrationWarning()
+    {
+        ShowCalibrationWarning = true;
+        try
+        {
+            await System.Threading.Tasks.Task.Delay(10000); // 10sn
+            ShowCalibrationWarning = false; // süre sonunda kpaat
+        }
+        catch { }
+    }
+public void CloseCalibrationWarning()
+    {
+        ShowCalibrationWarning = false;
+    }
+
 public bool TryCalibrate()
     {
         try
@@ -395,6 +416,64 @@ public bool TryCalibrate()
         }
     }
 
+private bool _showGroupWarning = false;
+public bool ShowGroupWarning
+    {
+        get => _showGroupWarning;
+        set { _showGroupWarning=value; RaisePropertyChanged(); }
+    }
+public bool HasSelectedGroup
+    {
+        get
+        {
+            foreach (var group in ZGroups)
+            {
+                if (group.IsActive) return true;
+            }
+            return false;
+        }
+    }
+public async void TriggerGroupWarning()
+    {
+        ShowGroupWarning = true;
+        try
+        {
+            await System.Threading.Tasks.Task.Delay(10000); // 10 saniye (10000 ms) bekle
+            ShowGroupWarning = false; // Süre dolunca otomatik kapat
+        }
+        catch { } // Görev iptal edilirse çökmemesi için
+    }
+
+    public void CloseWarning()
+    {
+        ShowGroupWarning = false;
+    }
+// --- HİÇ GRUP YOK UYARISI KONTROLCÜLERİ ---
+    private bool _showNoGroupWarning = false;
+    public bool ShowNoGroupWarning
+    {
+        get => _showNoGroupWarning;
+        set { _showNoGroupWarning = value; RaisePropertyChanged(); }
+    }
+
+    // Uyarıyı açıp 10 saniye sonra kapatan Asenkron Motor
+    public async void TriggerNoGroupWarning()
+    {
+        ShowNoGroupWarning = true;
+        try
+        {
+            await System.Threading.Tasks.Task.Delay(10000); // 10 saniye bekle
+            ShowNoGroupWarning = false; // Süre dolunca otomatik kapat
+        }
+        catch { } 
+    }
+
+    public void CloseNoGroupWarning()
+    {
+        ShowNoGroupWarning = false;
+    }
+
+
     public ObservableCollection<ZGroupItem> ZGroups {get; } = new();
 
     public void GenerateZGroups()
@@ -423,7 +502,7 @@ public bool TryCalibrate()
                 Id = ZGroups.Count + 1,
                 ZValue = 0.0,
                 ColorHex = colors[ZGroups.Count % colors.Length],
-                IsActive = ZGroups.Count == 0
+                IsActive = false
             });
         }
 

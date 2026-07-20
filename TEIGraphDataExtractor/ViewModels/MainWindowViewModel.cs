@@ -68,8 +68,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 GenerateZGroups();
             } else if (string.IsNullOrWhiteSpace(value))
             {
-                _groupCount = 0;
-                GenerateZGroups();
+
             }
         }
     }
@@ -532,7 +531,7 @@ public async void TriggerGroupWarning()
                 ZValue = 0.0,
                 ZValueText = "0,000",
                 ColorHex = colors[ZGroups.Count % colors.Length],
-                IsActive = ZGroups.Count == 0,
+                IsActive = false,
                 StatusReporter = (mesaj) => SystemStatus = mesaj,
 
                 OnValueChanged = (gId, newVal) => UpdatePointsForGroup(gId, newVal)

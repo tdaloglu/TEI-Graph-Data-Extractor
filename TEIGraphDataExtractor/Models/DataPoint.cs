@@ -35,6 +35,8 @@ namespace TEIGraphDataExtractor.Models
             set { _zValue = value; OnPropertyChanged(); }
         }
 
+        public int ZGroupId {get; set; } = 1;
+
         public int OrderIndex { get; set; }
 
         [ForeignKey(nameof(GraphId))]
@@ -44,5 +46,8 @@ namespace TEIGraphDataExtractor.Models
 
         private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        
+        protected void RaisePropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

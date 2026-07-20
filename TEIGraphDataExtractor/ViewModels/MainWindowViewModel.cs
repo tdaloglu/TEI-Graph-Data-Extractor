@@ -9,6 +9,7 @@ using TEIGraphDataExtractor.Services.Export;
 using Avalonia.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Linq;
 
 
 namespace TEIGraphDataExtractor.ViewModels;
@@ -152,6 +153,13 @@ public partial class MainWindowViewModel : ViewModelBase
         set {_activeZValue = value; RaisePropertyChanged(); }
     }
 
+    private int _activeZGroupId = 1;
+    public int ActiveZGroupId
+    {
+        get => _activeZGroupId;
+        set {_activeZGroupId = value; RaisePropertyChanged(); }
+    }
+
     private int _currentGraphId = 1;
     public int CurrentGraphId
     {
@@ -227,6 +235,7 @@ public bool TryCalibrate()
             var newPoint = new DataPoint
             {
                 GraphId = CurrentGraphId,
+                ZGroupId = ActiveZGroupId,
                 XValue = realCoord.RealX,
                 YValue = realCoord.RealY,
                 ZValue = ActiveZValue,
@@ -418,8 +427,12 @@ public bool TryCalibrate()
             {
                 Id = ZGroups.Count + 1,
                 ZValue = 0.0,
+                ZValueText = "0,000",
                 ColorHex = colors[ZGroups.Count % colors.Length],
-                IsActive = ZGroups.Count == 0
+                IsActive = ZGroups.Count == 0,
+                StatusReporter = (mesaj) => SystemStatus = mesaj,
+
+                OnValueChanged = (gId, newVal) => UpdatePointsForGroup(gId, newVal)
             });
         }
 
@@ -437,6 +450,7 @@ public bool TryCalibrate()
         }
 
         ActiveZValue = selectedGroup.ZValue;
+        ActiveZGroupId = selectedGroup.Id;
         SystemStatus = $"🏷️ Aktif Z Grubu Değişti: Grup {selectedGroup.Id} (Z = {selectedGroup.ZValue})";
     }
 
@@ -446,11 +460,29 @@ public bool TryCalibrate()
 
         if (ZGroups.Contains(groupToRemove))
         {
+            int deletedGroupId = groupToRemove.Id;
             bool wasActive = groupToRemove.IsActive;
-            ZGroups.Remove(groupToRemove);
 
+            var pointsToDelete = LiveDataPoints.Where(p => p.ZGroupId == deletedGroupId).ToList();
+            foreach (var pt in pointsToDelete)
+            {
+                DeletePoint(pt);
+            }
+
+            ZGroups.Remove(groupToRemove);
+            
             _groupCount = ZGroups.Count;
             GroupCountText = _groupCount.ToString();
+
+            foreach (var pt in LiveDataPoints.Where(p => p.ZGroupId > deletedGroupId))
+            {
+                pt.ZGroupId -= 1;
+            }
+
+            for (int i = 0; i < ZGroups.Count; i++)
+            {
+                ZGroups[i].Id = i + 1;
+            }
 
             if (wasActive && ZGroups.Count > 0)
             {
@@ -458,13 +490,32 @@ public bool TryCalibrate()
             } else if (ZGroups.Count == 0)
             {
                 ActiveZValue = 0.0;
-                SystemStatus = "⚠️ Hiçbir Z grubu kalmadı. Lütfen yeni bir grup ekleyin.";
-            }
-
-            for (int i = 0; i < ZGroups.Count; i++)
+                SystemStatus = "⚠️ Hiçbir Z grubu kalmadı.";
+            } else
             {
-                ZGroups[i].Id = i + 1;
+                SystemStatus = $"🗑️ Grup {deletedGroupId} ve ona ait {pointsToDelete.Count} nokta silindi.";
             }
+        }
+    }
+
+    public void UpdatePointsForGroup(int groupId, double newZValue)
+    {
+        int updatedCount = 0;
+        foreach (var pt in LiveDataPoints.Where(p => p.ZGroupId == groupId))
+        {
+            pt.ZValue = newZValue;
+            updatedCount++;
+        }
+
+        if (ActiveZGroupId == groupId)
+        {
+            _activeZValue = newZValue;
+            RaisePropertyChanged(nameof(ActiveZValue));
+        }
+
+        if (updatedCount > 0)
+        {
+            SystemStatus = $"🔄 Grup {groupId} güncellendi -> {updatedCount} noktanın Z değeri {newZValue:F3} yapıldı.";
         }
     }
 }

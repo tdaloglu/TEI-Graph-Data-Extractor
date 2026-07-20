@@ -1,4 +1,6 @@
+using System;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Avalonia.Data;
 
 namespace TEIGraphDataExtractor.Models
@@ -6,6 +8,8 @@ namespace TEIGraphDataExtractor.Models
     public partial class ZGroupItem : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
+        protected void RaisePropertyChanged([CallerMemberName] string? propertyName = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
         public int Id { get; set; }
@@ -41,13 +45,18 @@ namespace TEIGraphDataExtractor.Models
         public double ZValue
         {
             get => _zValue;
-            set 
-            { 
-                _zValue = value; 
-                _zValueStr = value.ToString(); // Koddan atama yapılırsa (örn: ZValue = 0.0), arayüzdeki metni de eşitle!
-                
-                OnPropertyChanged(nameof(ZValue)); 
-                OnPropertyChanged(nameof(ZValueInput)); 
+            set
+            {
+                if (_zValue != value)
+                {
+                    _zValue = value;
+                    RaisePropertyChanged();
+
+                    _zValueText = value.ToString("F3");
+                    RaisePropertyChanged(nameof(ZValueText));
+
+                    OnValueChanged?.Invoke(Id, value);
+                }
             }
         }
 
@@ -56,6 +65,36 @@ namespace TEIGraphDataExtractor.Models
         {
             get => _isActive;
             set { _isActive = value; OnPropertyChanged(nameof(IsActive)); }
+        }
+
+        public Action<string>? StatusReporter {get; set; }
+
+        public Action<int, double>? OnValueChanged {get; set; }
+
+        private string _zValueText = "0,000";
+        public string ZValueText
+        {
+            get => _zValueText;
+            set
+            {
+                _zValueText = value;
+                RaisePropertyChanged();
+
+                if (string.IsNullOrWhiteSpace(value)) return;
+
+                string sanitized = value.Replace('.', ',');
+                if (double.TryParse(sanitized, out double res))
+                {
+                    _zValue = res;
+                    RaisePropertyChanged(nameof(ZValue));
+                    StatusReporter?.Invoke("✅ Z değeri başarıyla güncellendi.");
+
+                    OnValueChanged?.Invoke(Id, _zValue);
+                } else
+                {
+                    StatusReporter?.Invoke($"⚠️ HATA: 'Grup {Id} Z Değeri' alanına sadece sayı girebilirsiniz!");
+                }
+            }
         }
     }
 }

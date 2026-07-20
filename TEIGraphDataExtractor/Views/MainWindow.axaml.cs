@@ -245,10 +245,15 @@ public partial class MainWindow : Window
 
             if (_isSingleAddModeActive && string.IsNullOrEmpty(_activeCalibrationStep))
             {
+                if (vm.ZGroups.Count == 0)
+                {
+                    vm.SystemStatus = "⚠️ UYARI: Hiçbir Z grubu bulunmuyor! Lütfen önce en az 1 grup ekleyin.";
+                    return;
+                }
                 var newPoint = vm.CaptureStreamPoint(point.X, point.Y);
                 if (newPoint != null)
                 {
-                    var dataDot = new Ellipse { Width = 4, Height = 4, Fill = _currentPenColor };
+                    var dataDot = new Ellipse { Width = 4, Height = 4, Fill = _currentPenColor, Tag = newPoint};
                     Canvas.SetLeft(dataDot, point.X - 2);
                     Canvas.SetTop(dataDot, point.Y - 2);
                     DrawingCanvas.Children.Add(dataDot); 
@@ -305,7 +310,7 @@ public partial class MainWindow : Window
                     var newPoint = vm.CaptureStreamPoint(point.X, point.Y);
                     if (newPoint != null)
                     {
-                        var dataDot = new Ellipse { Width = 4, Height = 4, Fill =_currentPenColor  };
+                        var dataDot = new Ellipse { Width = 4, Height = 4, Fill =_currentPenColor , Tag = newPoint};
                         Canvas.SetLeft(dataDot, point.X - 2);
                         Canvas.SetTop(dataDot, point.Y - 2);
 
@@ -554,6 +559,12 @@ public partial class MainWindow : Window
     {
         if (DataContext is MainWindowViewModel vm)
         {
+            if (vm.ZGroups.Count == 0)
+            {
+                vm.SystemStatus = "⚠️ UYARI: Hiçbir Z grubu bulunmuyor! Düzenleme yapmak için grup bulunmalıdır.";
+                _isAdjustModeActive = false;
+                return;
+            }
             _isAdjustModeActive = true;
             if (_isAdjustModeActive) { _isDrawModeActive = false; _isDeleteModeActive = false; _isSingleAddModeActive = false; }
             
@@ -777,6 +788,17 @@ public partial class MainWindow : Window
             if (DataContext is MainWindowViewModel vm)
             {
                 vm.RemoveZGroup(clickedGroup);
+
+                for (int i = _drawnDataDots.Count - 1; i >= 0; i--)
+                {
+                    var dot = _drawnDataDots[i];
+
+                    if (dot.Tag is DataPoint pt && !vm.LiveDataPoints.Contains(pt))
+                    {
+                        DrawingCanvas.Children.Remove(dot);
+                        _drawnDataDots.RemoveAt(i);
+                    }
+                }
             }
         }
     }

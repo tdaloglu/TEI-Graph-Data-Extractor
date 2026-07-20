@@ -6,9 +6,7 @@ using TEIGraphDataExtractor.Services;
 using TEIGraphDataExtractor.Utils;
 using TEIGraphDataExtractor.Services.Database;
 using TEIGraphDataExtractor.Services.Export;
-using Avalonia.Diagnostics;
 using System.IO;
-using System.Text.RegularExpressions;
 using System.Linq;
 
 
@@ -300,18 +298,6 @@ public bool TryCalibrate()
         }
     }
 
-    public void UndoLastCurve()
-    {
-        bool success = _graphDataService.UndoLastStroke(LiveDataPoints);
-        if (success)
-        {
-            SystemStatus = "↩️ Son çizilen eğri başarıyla geri alındı.";
-        } else
-        {
-            SystemStatus = "ℹ️ Geri alınacak geçici çizim geçmişi bulunmuyor.";
-        }
-    }
-
     public void ClearStreamData()
     {
         LiveDataPoints.Clear();
@@ -357,40 +343,7 @@ public bool TryCalibrate()
         {
             SystemStatus = $"🗑️ Nokta #{pointToDelete.OrderIndex} ekrandan silindi (Henüz DB'ye kaydolmamıştı).";
         }
-    }
-
-    public bool TryDeletePointAtPixel(double clickPixelX, double clickPixelY, double hitTolerancePixels = 15.0)
-    {
-        if (LiveDataPoints.Count == 0) return false;
-
-        DataPoint? closestPoint = null;
-        double minDistance = double.MaxValue;
-
-        foreach(var point in LiveDataPoints)
-        {
-            var ptPixel = Converter.RealWorldToPixel(point.XValue, point.YValue);
-
-            double dx = ptPixel.PixelX - clickPixelX;
-            double dy = ptPixel.PixelY - clickPixelY;
-            double distance = Math.Sqrt(dx*dx + dy*dy);
-
-            if (distance < minDistance)
-            {
-                minDistance = distance;
-                closestPoint = point;
-            }
-        }
-
-        if (closestPoint != null && minDistance <= hitTolerancePixels)
-        {
-            DeletePoint(closestPoint);
-
-            SystemStatus = "ℹ️ Nokta başarı ile silindi.";
-            return true;
-        } 
-
-        return false;
-    }
+    } 
 
     public void ExportToCsv(string? customFilePath = null)
     {

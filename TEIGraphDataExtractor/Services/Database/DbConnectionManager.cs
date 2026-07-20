@@ -19,11 +19,5 @@ namespace TEIGraphDataExtractor.Services.Database
             DbPath = Path.Combine(baseFolder, "TEIGraphDataExtractor.db");
             ConnectionString = $"Data Source={DbPath}";
         }
-
-        public void SetCustomDbPath(string customPath)
-        {
-            DbPath = customPath;
-            ConnectionString = $"Data Source={DbPath}";
-        }
     }
 }

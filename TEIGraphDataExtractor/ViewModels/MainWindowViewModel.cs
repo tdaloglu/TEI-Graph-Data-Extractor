@@ -415,7 +415,29 @@ public bool TryCalibrate()
             Console.WriteLine($"[❌ EXPORT HATASI]: {ex.Message}");
         }
     }
+// --- RESİM YOK UYARISI KONTROLCÜLERİ ---
+    private bool _showNoImageWarning = false;
+    public bool ShowNoImageWarning
+    {
+        get => _showNoImageWarning;
+        set { _showNoImageWarning = value; RaisePropertyChanged(); }
+    }
 
+    public async void TriggerNoImageWarning()
+    {
+        ShowNoImageWarning = true;
+        try
+        {
+            await System.Threading.Tasks.Task.Delay(10000); // 10 saniye bekle
+            ShowNoImageWarning = false; 
+        }
+        catch { } 
+    }
+
+    public void CloseNoImageWarning()
+    {
+        ShowNoImageWarning = false;
+    }
 private bool _showGroupWarning = false;
 public bool ShowGroupWarning
     {
@@ -462,8 +484,6 @@ public async void TriggerGroupWarning()
         ShowNoGroupWarning = true;
         try
         {
-            await System.Threading.Tasks.Task.Delay(10000); // 10 saniye bekle
-            ShowNoGroupWarning = false; // Süre dolunca otomatik kapat
         }
         catch { } 
     }

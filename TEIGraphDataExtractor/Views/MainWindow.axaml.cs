@@ -466,12 +466,18 @@ public partial class MainWindow : Window
     {
         if (DataContext is MainWindowViewModel vm)
         {
+            if (vm.GraphImage == null) 
+            {
+                vm.SystemStatus = "⚠️ UYARI: Lütfen önce bir resim ekleyiniz!";
+                _isDrawModeActive = false;
+                vm.TriggerNoImageWarning(); 
+                return; // Kodu kes
+            }
             if (!vm.Converter.IsCalibrated)
             {
                 vm.SystemStatus = "Önce kalibrasyonu tamamlamalısınız!";
                 _isDrawModeActive = false;
                 vm.TriggerCalibrationWarning();
-                vm.TriggerNoGroupWarning();
                 return;
             }
             
@@ -480,6 +486,7 @@ public partial class MainWindow : Window
             {
                 vm.SystemStatus = "⚠️ UYARI: Hiçbir Z grubu bulunmuyor! Çizim yapabilmek için lütfen en az 1 grup ekleyin.";
                 _isDrawModeActive = false;
+                vm.TriggerNoGroupWarning();
                 return;
             }
             if (!vm.HasSelectedGroup)
@@ -503,12 +510,18 @@ public partial class MainWindow : Window
     {
         if (DataContext is MainWindowViewModel vm)
         {
+            if (vm.GraphImage == null) 
+            {
+                vm.SystemStatus = "⚠️ UYARI: Lütfen önce bir resim ekleyiniz!";
+                _isDrawModeActive = false;
+                vm.TriggerNoImageWarning(); // Büyük pop-up'ı tetikle
+                return; // Kodu kes
+            }
             if (!vm.Converter.IsCalibrated)
             {
                 vm.SystemStatus = "⚠️ Önce kalibrasyonu tamamlamalısınız!";
                 _isSingleAddModeActive = false;
                 vm.TriggerCalibrationWarning();
-                vm.TriggerNoGroupWarning();
                 return;
             }
 
@@ -517,6 +530,7 @@ public partial class MainWindow : Window
                 vm.SystemStatus = "⚠️ UYARI: Hiçbir Z grubu bulunmuyor! Çizim yapabilmek için lütfen en az 1 grup ekleyin.";
                 _isDrawModeActive = false;
                 _isSingleAddModeActive = false;
+                vm.TriggerNoGroupWarning();
                 return;
             }
             if (!vm.HasSelectedGroup)
@@ -800,6 +814,13 @@ public partial class MainWindow : Window
         if (DataContext is MainWindowViewModel vm)
         {
             vm.CloseNoGroupWarning();
+        }
+    }
+    public void CloseNoImageWarningPopup_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            vm.CloseNoImageWarning();
         }
     }
 }

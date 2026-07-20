@@ -30,7 +30,11 @@ TEI Graph Data Extractor, mühendislik grafiklerinden ve görsellerden hassas (X
 *   **Arayüz Çerçevesi:** Avalonia UI (XAML)
 *   **Mimari:** MVVM (Model-View-ViewModel)
 *   **Veritabanı:** Entity Framework Core (AppDbContext)
-<img width="1343" height="737" alt="image" src="https://github.com/user-attachments/assets/be756ace-2b16-4804-916c-2794075cbac5" />
+
+
+## 🎥 Uygulama Demosu
+
+[![TEI Graph Data Extractor Demo](https://img.youtube.com/vi/n_zAWcN0ITc/maxresdefault.jpg)](https://www.youtube.com/watch?v=n_zAWcN0ITc)
 
 
 

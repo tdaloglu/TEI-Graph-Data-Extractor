@@ -70,18 +70,72 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
 
-    private double _realXMin = 0.0;
-    public double RealXMin { get => _realXMin; set { _realXMin = value; RaisePropertyChanged(); } }
+   // --- ARAYÜZ (STRING) DEĞİŞKENLERİ ---
+    private string _realXMinStr = "0";
+    public string RealXMin
+    {
+        get => _realXMinStr;
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value) || !double.TryParse(value, out double result))
+                throw new Avalonia.Data.DataValidationException("Lütfen geçerli bir sayı girin.");
+                
+            _realXMinStr = value;
+            RealXMinDouble = result;
+            RaisePropertyChanged();
+        }
+    }
 
-    private double _realXMax = 0.0;
-    public double RealXMax { get => _realXMax; set { _realXMax = value; RaisePropertyChanged(); } }
+    private string _realXMaxStr = "0";
+    public string RealXMax
+    {
+        get => _realXMaxStr;
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value) || !double.TryParse(value, out double result))
+                throw new Avalonia.Data.DataValidationException("Lütfen geçerli bir sayı girin.");
+                
+            _realXMaxStr = value;
+            RealXMaxDouble = result;
+            RaisePropertyChanged();
+        }
+    }
 
-    private double _realYMin = 0.0;
-    public double RealYMin { get => _realYMin; set { _realYMin = value; RaisePropertyChanged(); } }
+    private string _realYMinStr = "0";
+    public string RealYMin
+    {
+        get => _realYMinStr;
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value) || !double.TryParse(value, out double result))
+                throw new Avalonia.Data.DataValidationException("Lütfen geçerli bir sayı girin.");
+                
+            _realYMinStr = value;
+            RealYMinDouble = result;
+            RaisePropertyChanged();
+        }
+    }
 
-    private double _realYMax = 0.0;
-    public double RealYMax { get => _realYMax; set { _realYMax = value; RaisePropertyChanged(); } }
+    private string _realYMaxStr = "0";
+    public string RealYMax
+    {
+        get => _realYMaxStr;
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value) || !double.TryParse(value, out double result))
+                throw new Avalonia.Data.DataValidationException("Lütfen geçerli bir sayı girin.");
+                
+            _realYMaxStr = value;
+            RealYMaxDouble = result;
+            RaisePropertyChanged();
+        }
+    }
 
+    // --- ARKA PLANDAKİ MATEMATİK İÇİN (DOUBLE) DEĞİŞKENLER ---
+    public double RealXMinDouble { get; set; } = 0.0;
+    public double RealXMaxDouble { get; set; } = 0.0;
+    public double RealYMinDouble { get; set; } = 0.0;
+    public double RealYMaxDouble { get; set; } = 0.0;
 
     // --- PİKSEL DEĞERLERİNİ TUTACAK GEÇİCİ DEĞİŞKENLER ---
     public double MinPixelX { get; set; }
@@ -129,15 +183,15 @@ public partial class MainWindowViewModel : ViewModelBase
         IsDeleteModeActive = !IsDeleteModeActive;
     }
 
-    public bool TryCalibrate()
+public bool TryCalibrate()
     {
         try
         {
-            Converter.Calibrate(MinPixelX, XMaxPixelX, MinPixelY, YMaxPixelY, RealXMin, RealXMax, RealYMin, RealYMax);
+            // BURASI DEĞİŞTİ: Artık sonu 'Double' ile biten gerçek sayısal değişkenlerimizi gönderiyoruz
+            Converter.Calibrate(MinPixelX, XMaxPixelX, MinPixelY, YMaxPixelY, RealXMinDouble, RealXMaxDouble, RealYMinDouble, RealYMaxDouble);
             SystemStatus = "🚀 Kalibrasyon Başarılı! Farenizi gezdirip test edebilirsiniz.";
             return true;
         }
-
         catch (Exception ex)
         {
             SystemStatus = $"⚠️ Kalibrasyon Hatası: {ex.Message}";

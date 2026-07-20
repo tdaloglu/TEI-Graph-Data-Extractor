@@ -571,8 +571,8 @@ public partial class MainWindow : Window
     {
         if (DataContext is MainWindowViewModel vm)
         {
-            vm.RealXMin = 0.0; vm.RealXMax = 0.0;
-            vm.RealYMin = 0.0; vm.RealYMax = 0.0;
+            vm.RealXMin = "0"; vm.RealXMax = "0";
+            vm.RealYMin = "0"; vm.RealYMax = "0";
             vm.MinPixelX = 0.0; vm.MinPixelY = 0.0;
             vm.XMaxPixelX = 0.0; vm.YMaxPixelY = 0.0;
 

@@ -56,7 +56,7 @@ Projeyi kendi bilgisayarınızda çalıştırmak için aşağıdaki adımları i
     dotnet run
    ```
 
-   👩‍💻 Geliştiriciler
+## 👩‍💻 Geliştiriciler
 
    
 Başak Heybeli - ODTÜ Bilgisayar Mühendisliği - https://github.com/heybasakk

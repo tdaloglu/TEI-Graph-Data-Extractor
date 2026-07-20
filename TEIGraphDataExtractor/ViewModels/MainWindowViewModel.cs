@@ -540,7 +540,24 @@ public async void TriggerGroupWarning()
 
         while (ZGroups.Count > _groupCount)
         {
+            var lastGroup = ZGroups[ZGroups.Count - 1];
+
+            var pointsToDelete = LiveDataPoints.Where(p => p.ZGroupId == lastGroup.Id).ToList();
+            foreach (var pt in pointsToDelete)
+            {
+                DeletePoint(pt);
+            }
+
             ZGroups.RemoveAt(ZGroups.Count - 1);
+        }
+
+        if (ZGroups.Count > 0 && !ZGroups.Any(g => g.IsActive))
+        {
+            SetActiveGroup(ZGroups[0]);
+        } else if (ZGroups.Count == 0)
+        {
+            ActiveZValue = 0.0;
+            SystemStatus = "⚠️ Hiçbir Z grubu kalmadı.";
         }
     }
 

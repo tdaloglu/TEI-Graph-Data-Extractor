@@ -36,6 +36,24 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         this.AddHandler(KeyDownEvent, Window_KeyDown, RoutingStrategies.Tunnel);
+
+        this.DataContextChanged += (s, e) =>
+        {
+            if (DataContext is MainWindowViewModel vm)
+            {
+                vm.LiveDataPoints.CollectionChanged += (sender, args) =>
+                {
+                    for (int i = _drawnDataDots.Count - 1; i >= 0; i--)
+                    {
+                        if (_drawnDataDots[i].Tag is DataPoint pt && !vm.LiveDataPoints.Contains(pt))
+                        {
+                            DrawingCanvas.Children.Remove(_drawnDataDots[i]);
+                            _drawnDataDots.RemoveAt(i);
+                        }
+                    }
+                };
+            }
+        };
     }
 
     public async void LoadImageButton_Click(object? sender, RoutedEventArgs e)

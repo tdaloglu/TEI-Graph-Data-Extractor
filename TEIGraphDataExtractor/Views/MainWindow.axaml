@@ -6,7 +6,8 @@
         Title="TEI-Graph-Data-Extractor" 
         Width="1350" Height="850"
         Background="#0b1120"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        KeyDown="Window_KeyDown">
 
     <Grid x:Name="MainLayoutGrid">
         <Grid.ColumnDefinitions>
@@ -61,7 +62,7 @@
                     
                     <Grid Grid.Row="1" ColumnDefinitions="*, Auto" Margin="0,0,0,15">
                         <TextBlock Text="Toplam Grup Sayısı:" Foreground="White" VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1" Text="{Binding GroupCountText, Mode=TwoWay}" Width="40" Background="#0b1120" Foreground="White" TextAlignment="Center" CornerRadius="4"/>
+                        <TextBox Grid.Column="1" Text="{Binding GroupCountText}" Width="40" Background="#0b1120" Foreground="White" TextAlignment="Center" CornerRadius="4"/>
                     </Grid>
 
                     <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,5,0">
@@ -70,12 +71,9 @@
                                 <DataTemplate>
                                     <Border Background="#0b1120" CornerRadius="6" Padding="8" Margin="0,0,0,8" BorderThickness="1" BorderBrush="#2D3B55">
                                         <Grid ColumnDefinitions="Auto, *, Auto">
-                                            <Ellipse Grid.Column="0" Width="12" Height="12" Fill="{Binding ColorHex}" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                                            <TextBox Grid.Column="1" Text="{Binding ZValue, Mode=TwoWay}" Background="Transparent" Foreground="White" BorderThickness="0" VerticalAlignment="Center"/>
-                                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                                <Button Content="Seç" Click="SelectZGroupButton_Click" Tag="{Binding}" FontSize="11" Padding="12,5" Background="#2D3B55" Foreground="White" CornerRadius="4"/>
-                                                <Button Content="❌" Click="DeleteZGroupButton_Click" Tag="{Binding}" FontSize="11" Padding="8,5" Background="#00E53535" Foreground="White" CornerRadius="4"/>
-                                            </StackPanel>
+                                            <Ellipse Width="12" Height="12" Fill="{Binding ColorHex}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                            <TextBox Grid.Column="1" Text="{Binding ZValueInput, Mode=TwoWay}" Background="Transparent" Foreground="White" BorderThickness="0" VerticalAlignment="Center"/>
+                                            <Button Grid.Column="2" Content="Seç" Click="SelectZGroupButton_Click" Tag="{Binding}" FontSize="11" Padding="12,5" Background="#2D3B55" Foreground="White" CornerRadius="4"/>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
@@ -261,9 +259,9 @@
                                           Margin="0,5">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="#" Binding="{Binding OrderIndex}" Width="35"/>
-                                        <DataGridTextColumn Header="X Değeri" Binding="{Binding XValue, StringFormat={}{0:F4}}" Width="*"/>
-                                        <DataGridTextColumn Header="Y Değeri" Binding="{Binding YValue, StringFormat={}{0:F4}}" Width="*"/>
-                                        <DataGridTextColumn Header="Z" Binding="{Binding ZValue, StringFormat={}{0:F3}}" Width="50"/>
+                                        <DataGridTextColumn Header="X Değeri" Binding="{Binding XValue, StringFormat={}{0:F3}}" Width="*"/>
+                                        <DataGridTextColumn Header="Y Değeri" Binding="{Binding YValue, StringFormat={}{0:F3}}" Width="*"/>
+                                        <DataGridTextColumn Header="Z" Binding="{Binding ZValue, StringFormat={}{0:F1}}" Width="50"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </DockPanel>

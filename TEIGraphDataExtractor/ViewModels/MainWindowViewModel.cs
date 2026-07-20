@@ -42,6 +42,10 @@ public partial class MainWindowViewModel : ViewModelBase
         get => _groupCountText;
         set
         {
+            if (!string.IsNullOrWhiteSpace(value) && !int.TryParse(value, out _))
+            {
+                throw new Avalonia.Data.DataValidationException("Lütfen geçerli bir tam sayı giriniz.");
+            }   
             _groupCountText = value;
             RaisePropertyChanged();
 

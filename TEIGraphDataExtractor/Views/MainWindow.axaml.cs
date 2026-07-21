@@ -9,6 +9,8 @@ using System;
 using TEIGraphDataExtractor.Models;
 using TEIGraphDataExtractor.ViewModels;
 using TEIGraphDataExtractor.Services.Export;
+using Avalonia.Platform;
+using Avalonia;
 
 
 namespace TEIGraphDataExtractor.Views;
@@ -526,7 +528,10 @@ public partial class MainWindow : Window
             vm.SystemStatus = _isDrawModeActive
                 ? "✒️ Kalem Modu AKTİF. Farenin sol tuşuna basılı tutarak çizim yapın."
                 : "✒️ Kalem Modu KAPATILDI.";
+
+            UpdateCursor();
         }
+        
     }
 
     public void AddPointButton_Click(object? sender, RoutedEventArgs e)
@@ -571,6 +576,7 @@ public partial class MainWindow : Window
                 ? "📍 Tek Nokta Ekleme AKTİF. Resme tıklayarak hassas nokta ekleyebilirsiniz."
                 : "📍 Tek Nokta Ekleme KAPATILDI.";
         }
+        UpdateCursor();
     }
 
     public void AdjustModeButton_Click(object? sender, RoutedEventArgs e)
@@ -590,6 +596,7 @@ public partial class MainWindow : Window
                 ? "🖐️ TAŞIMA MODU AKTİF: Yanlış noktaları farenizle sürükleyip düzeltebilirsiniz." 
                 : "🖐️ Taşıma Modu kapatıldı.";
         }
+        UpdateCursor();
     }
 
     public void DeletePointButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -603,6 +610,7 @@ public partial class MainWindow : Window
                 ? "🎯 SİLME MODU AKTİF: Noktalara tıklayarak silebilirsiniz."
                 : "✏️ Silme Modu kapatıldı.";
         }
+        UpdateCursor();
     }
 
     public void TekDeletePointButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -627,6 +635,7 @@ public partial class MainWindow : Window
                 vm.SystemStatus = "ℹ️ Geri alınacak nokta yok.";
             }
         }
+        UpdateCursor();
     }
 
     public void ClearAllPointsButton_Click(object? sender, RoutedEventArgs e)
@@ -820,7 +829,7 @@ public partial class MainWindow : Window
             }
         }
     }
-    // [GÜNCELLENDİ]: Hem Windows (Ctrl+Z) hem Mac (Cmd+Z) destekleyen geri al fonksiyonu
+
     private void Window_KeyDown(object? sender, KeyEventArgs e)
     {
        
@@ -863,4 +872,116 @@ public partial class MainWindow : Window
             vm.CloseNoImageWarning();
         }
     }
+
+
+
+private Cursor? _customPenCursor; // İmleci hafızada tutmak için
+
+private Cursor GetCustomPenCursor()
+{
+    // Eğer kalemi daha önce oluşturduysak tekrar tekrar oluşturmayıp eskisini veriyoruz (Performans için)
+    if (_customPenCursor != null) return _customPenCursor;
+
+    try
+    {
+        // 1. Senin gönderdiğin SVG Path verisini okuyoruz
+        var geometry = Avalonia.Media.StreamGeometry.Parse("M7.5 2.75C7.5 2.33579 7.16421 2 6.75 2C6.33579 2 6 2.33579 6 2.75V5.75C6 6.60889 6.61875 7.32327 7.43481 7.47169L6.34113 10.4403C6.08209 11.1434 6.12117 11.9217 6.44935 12.5954L10.6068 21.129C10.8664 21.6619 11.4072 22 12 22C12.5927 22 13.1336 21.6619 13.3932 21.129L17.5034 12.6923C17.8691 11.9415 17.8739 11.0653 17.5165 10.3106L16.1851 7.5H16.25C17.2165 7.5 18 6.7165 18 5.75V2.75C18 2.33579 17.6642 2 17.25 2C16.8358 2 16.5 2.33579 16.5 2.75V5.75C16.5 5.88807 16.3881 6 16.25 6H7.75C7.61193 6 7.5 5.88807 7.5 5.75V2.75ZM14.5254 7.5L16.1609 10.9527C16.3234 11.2958 16.3212 11.6941 16.1549 12.0353L12.75 19.0243V12.2993C13.1984 12.04 13.5 11.5552 13.5 11C13.5 10.1716 12.8284 9.5 12 9.5C11.1716 9.5 10.5 10.1716 10.5 11C10.5 11.5552 10.8016 12.04 11.25 12.2993V19.0244L7.79783 11.9384C7.64866 11.6322 7.6309 11.2784 7.74864 10.9588L9.02294 7.5H14.5254Z");
+
+        // 2. Bir Path kontrolü (şekil) oluşturuyoruz
+        var path = new Path
+        {
+            Data = geometry,
+            Fill = Avalonia.Media.Brushes.White, // Kalemin iç rengi
+            Stroke = Avalonia.Media.Brushes.DeepSkyBlue, // Kalemin dış çizgisi (Uygulamanın mavi temasıyla uyumlu)
+            StrokeThickness = 1,
+            Width = 24,
+            Height = 24
+        };
+
+        // 3. Arka planda sanal bir çizim yapıyoruz
+        path.Measure(new Size(24, 24));
+        path.Arrange(new Rect(0, 0, 24, 24));
+
+        var rtb = new Avalonia.Media.Imaging.RenderTargetBitmap(new PixelSize(24, 24), new Vector(96, 96));
+        rtb.Render(path);
+
+        // 4. İŞTE SİHİR BURADA: Kalemin en sivri uç noktası tam olarak X:12, Y:22 pikseline denk geliyor!
+        _customPenCursor = new Cursor(rtb, new PixelPoint(12, 22));
+    }
+    catch
+    {
+        // Bir hata olursa güvenlik önlemi olarak standart artı işaretini ver
+        _customPenCursor = new Cursor(Avalonia.Input.StandardCursorType.Cross);
+    }
+
+    return _customPenCursor;
+}
+
+private Cursor? _customEraserCursor; // İmleci hafızada tutmak için
+
+private Cursor GetCustomEraserCursor()
+{
+    // Eğer kalemi daha önce oluşturduysak tekrar tekrar oluşturmayıp eskisini veriyoruz (Performans için)
+    if (_customEraserCursor != null) return _customEraserCursor;
+
+    try
+    {
+        // 1. Senin gönderdiğin SVG Path verisini okuyoruz
+        var geometry = Avalonia.Media.StreamGeometry.Parse("M20,2.25 C20.3796958,2.25 20.693491,2.53215388 20.7431534,2.89822944 L20.75,3 L20.75,17 C20.75,19.5504817 18.7398587,21.6314697 16.217428,21.7451121 L16,21.75 L8,21.75 C5.44951834,21.75 3.36853034,19.7398587 3.25488786,17.217428 L3.25,17 L3.25,3.50170761 C3.25,3.08749405 3.58578644,2.75170761 4,2.75170761 C4.37969577,2.75170761 4.69349096,3.03386149 4.74315338,3.39993706 L4.75,3.50170761 L4.75,6.791 L19.25,6.791 L19.25,3 C19.25,2.58578644 19.5857864,2.25 20,2.25 Z M19.25,13.5 L4.75,13.5 L4.75,17 C4.75,18.7330315 6.10645477,20.1492459 7.81557609,20.2448552 L8,20.25 L16,20.25 C17.7330315,20.25 19.1492459,18.8935452 19.2448552,17.1844239 L19.25,17 L19.25,13.5 Z M19.25,8.291 L4.75,8.291 L4.75,12 L19.25,12 L19.25,8.291");
+
+        // 2. Bir Path kontrolü (şekil) oluşturuyoruz
+        var path = new Path
+        {
+            Data = geometry,
+            Fill = Avalonia.Media.Brushes.White, // Kalemin iç rengi
+            Stroke = Avalonia.Media.Brushes.DeepSkyBlue, // Kalemin dış çizgisi (Uygulamanın mavi temasıyla uyumlu)
+            StrokeThickness = 1,
+            Width = 24,
+            Height = 24
+        };
+
+        // 3. Arka planda sanal bir çizim yapıyoruz
+        path.Measure(new Size(24, 24));
+        path.Arrange(new Rect(0, 0, 24, 24));
+
+        var rtb = new Avalonia.Media.Imaging.RenderTargetBitmap(new PixelSize(24, 24), new Vector(96, 96));
+        rtb.Render(path);
+
+        // 4. İŞTE SİHİR BURADA: Kalemin en sivri uç noktası tam olarak X:12, Y:22 pikseline denk geliyor!
+        _customEraserCursor = new Cursor(rtb, new PixelPoint(12, 22));
+    }
+    catch
+    {
+        // Bir hata olursa güvenlik önlemi olarak standart artı işaretini ver
+        _customEraserCursor = new Cursor(Avalonia.Input.StandardCursorType.Cross);
+    }
+
+    return _customEraserCursor;
+}
+
+private void UpdateCursor()
+{
+    if (_isAdjustModeActive)
+    {
+        // Taşıma modu: El işareti
+        DrawingCanvas.Cursor = new Cursor(StandardCursorType.DragMove);
+    }
+    else if (_isDrawModeActive)
+    {
+        DrawingCanvas.Cursor = GetCustomPenCursor();
+    }
+    else if (_isSingleAddModeActive)
+    {
+        DrawingCanvas.Cursor = new Cursor(StandardCursorType.Cross);
+    }
+    else if (_isDeleteModeActive)
+    {
+        DrawingCanvas.Cursor = GetCustomEraserCursor();
+    }
+    else
+    {
+        DrawingCanvas.Cursor = new Cursor(StandardCursorType.Arrow);
+    }
+}
+
 }

@@ -71,29 +71,29 @@ namespace TEIGraphDataExtractor.Models
 
         public Action<int, double>? OnValueChanged {get; set; }
 
-        private string _zValueText = "0,000";
+        private string _zValueText = "0";
         public string ZValueText
         {
             get => _zValueText;
             set
             {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    throw new DataValidationException("Lütfen geçerli bir sayı girin.");
+                }
+
+                string sanitizedValue = value.Replace('.', ',');
+
+                if (!double.TryParse(sanitizedValue, out double result))
+                {
+                    throw new DataValidationException("Lütfen geçerli bir sayı girin.");
+                }
+
                 _zValueText = value;
                 RaisePropertyChanged();
 
-                if (string.IsNullOrWhiteSpace(value)) return;
-
-                string sanitized = value.Replace('.', ',');
-                if (double.TryParse(sanitized, out double res))
-                {
-                    _zValue = res;
-                    RaisePropertyChanged(nameof(ZValue));
-                    StatusReporter?.Invoke("✅ Z değeri başarıyla güncellendi.");
-
-                    OnValueChanged?.Invoke(Id, _zValue);
-                } else
-                {
-                    StatusReporter?.Invoke($"⚠️ HATA: 'Grup {Id} Z Değeri' alanına sadece sayı girebilirsiniz!");
-                }
+                ZValue = result;
+                OnValueChanged?.Invoke(Id, result);
             }
         }
     }

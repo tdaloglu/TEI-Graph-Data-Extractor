@@ -94,6 +94,10 @@ public partial class MainWindow : Window
 
     public void DrawingCanvas_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
+        if (e.GetCurrentPoint(DrawingCanvas).Properties.IsLeftButtonPressed && DataContext is MainWindowViewModel vmStart)
+        {
+            vmStart.StartDrawingStroke();
+        }
         var point = e.GetPosition(DrawingCanvas);
 
         // ==========================================
@@ -468,6 +472,11 @@ public partial class MainWindow : Window
 
     public void DrawingCanvas_PointerReleased(object? sender, PointerReleasedEventArgs e)
     {
+        if (DataContext is MainWindowViewModel vmEnd)
+        {
+            vmEnd.EndDrawingStroke();
+        }
+
         if (_draggedDot != null)
         {
             _draggedDot = null; 
@@ -626,6 +635,14 @@ public partial class MainWindow : Window
             {
                 vm.SystemStatus = "ℹ️ Geri alınacak nokta yok.";
             }
+        }
+    }
+
+    public void UndoLastStrokeButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            vm.UndoLastCurve();
         }
     }
 

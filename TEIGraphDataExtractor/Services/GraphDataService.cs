@@ -6,7 +6,7 @@ using TEIGraphDataExtractor.Models;
 
 namespace TEIGraphDataExtractor.Services
 {
-    public class GraphDataService
+    public class GraphDataService :IGraphDataService
     {
         private readonly Stack<List<DataPoint>> _undoHistory = new Stack<List<DataPoint>>();
 

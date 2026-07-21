@@ -1,9 +1,10 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Data.Core;
-using Avalonia.Data.Core.Plugins;
-using System.Linq;
 using Avalonia.Markup.Xaml;
+using Microsoft.Extensions.DependencyInjection;
+using TEIGraphDataExtractor.Services;
+using TEIGraphDataExtractor.Services.Export;
+using TEIGraphDataExtractor.Utils;
 using TEIGraphDataExtractor.ViewModels;
 using TEIGraphDataExtractor.Views;
 
@@ -11,6 +12,7 @@ namespace TEIGraphDataExtractor;
 
 public partial class App : Application
 {
+    public static ServiceProvider? Services {get; private set; }
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -18,13 +20,21 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        var collection = new ServiceCollection();
+
+        collection.AddSingleton<ICoordinateConverter, CoordinateConverter>();
+        collection.AddSingleton<IGraphDataService, GraphDataService>();
+        collection.AddSingleton<IExportStrategy, CsvExportStrategy>();
+        collection.AddTransient<MainWindowViewModel>();
+
+        Services = collection.BuildServiceProvider();
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            //TEIGraphDataExtractor.Services.Database.DatabaseTester.RunAllTests();
-
+            var vm = Services.GetRequiredService<MainWindowViewModel>();
             desktop.MainWindow = new MainWindow
             {
-                DataContext = new MainWindowViewModel(),
+                DataContext = vm
             };
         }
 

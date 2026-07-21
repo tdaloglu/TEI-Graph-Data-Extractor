@@ -33,7 +33,7 @@
                     <Button Content="✒️ Kalem (Seri Çizim)" Click="DrawModeButton_Click" Background="#4DA6FF" Foreground="White" FontSize="14" FontWeight="Bold" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,0,10" Padding="0,10" CornerRadius="6"/>
                     
                     <!-- UniformGrid yerine Grid kullanıyoruz ki hizalamalar ve boyutlar tam kontrolümüzde olsun -->
-                    <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,*">
+                    <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,*">
                         
                         <!-- 1. Satır -->
                         <Button Grid.Row="0" Grid.Column="0" Content="➕ Ekle" Click="AddPointButton_Click" 
@@ -46,6 +46,9 @@
                                 Background="#2D3B55" Foreground="White" FontSize="12" Margin="0,0,4,8" Padding="0,8" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
                         <Button Grid.Row="1" Grid.Column="1" Content="🗑️ Sil" Click="DeletePointButton_Click" 
                                 Background="#2D3B55" Foreground="White" FontSize="12" Margin="4,0,0,8" Padding="0,8" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+
+                        <Button Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Content="🌊 Eğriyi (Çizgiyi) Geri Al" Click="UndoLastStrokeButton_Click"
+                                Background="#2D3B55" Foreground="White" FontSize="12" Margin="0,0,0,8" Padding="0,8" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>   
                         
                         <!-- 3. Satır: Sil butonu tek kaldığı için boşluk bırakmasın diye iki kolona yayıyoruz -->
                         <Button Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Content="🧹 Tümünü Temizle" Click="ClearAllPointsButton_Click" 

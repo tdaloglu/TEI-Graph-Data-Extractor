@@ -14,8 +14,21 @@ namespace TEIGraphDataExtractor.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-   public CoordinateConverter Converter { get; } = new CoordinateConverter();
-   private readonly GraphDataService _graphDataService = new GraphDataService();
+    public ICoordinateConverter Converter {get; }
+    private readonly IGraphDataService _graphDataService;
+    private readonly IExportStrategy _exportStrategy;
+
+    public MainWindowViewModel(
+        ICoordinateConverter converter,
+        IGraphDataService graphDataService,
+        IExportStrategy exportStrategy)
+    {
+        Converter = converter;
+        _graphDataService = graphDataService;
+        _exportStrategy = exportStrategy;
+    }
+
+    public MainWindowViewModel() : this(new CoordinateConverter(), new GraphDataService(), new CsvExportStrategy()) {}
    private string _systemStatus = "✅ Sistem Hazır. Lütfen görsel yükleyiniz.";
    public string SystemStatus
     {
@@ -234,12 +247,21 @@ public bool TryCalibrate()
         _graphDataService.BeginNewStroke();
     }
 
-    public void EndDrawingStroke()
+public void EndDrawingStroke()
     {
         _graphDataService.EndCurrentStroke();
+    }
 
-        SaveBatchToDatabase();
-
+    public void UndoLastCurve()
+    {
+        bool success = _graphDataService.UndoLastStroke(LiveDataPoints);
+        if (success)
+        {
+            SystemStatus = "↩️ Son çizilen eğri başarıyla geri alındı.";
+        } else
+        {
+            SystemStatus = "ℹ️ Geri alınacak geçici çizim geçmişi bulunmuyor.";
+        }
     }
 
     public DataPoint? CaptureStreamPoint(double pixelX, double pixelY)
@@ -356,14 +378,12 @@ public bool TryCalibrate()
 
         try
         {
-            IExportStrategy exportStrategy = new CsvExportStrategy();
-
             string targetPath = customFilePath ?? Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
                 $"TEI_Grafik_Verisi_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
             );
 
-            bool success = exportStrategy.Export(LiveDataPoints, targetPath);
+            bool success = _exportStrategy.Export(LiveDataPoints, targetPath);
 
             if (success)
             {

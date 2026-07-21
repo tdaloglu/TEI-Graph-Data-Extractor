@@ -1,4 +1,5 @@
 using System;
+using TEIGraphDataExtractor.Services;
 
 namespace TEIGraphDataExtractor.Utils
 {
@@ -6,7 +7,7 @@ namespace TEIGraphDataExtractor.Utils
     /// Piksel koordinatlarını gerçek dünya kontur grafiği değerlerine dönüştüren servis.
     /// Single Responsibility (SRP): Yalnızca kalibrasyon oranları ve koordinat matematiğinden sorumludur.
     /// </summary>
-    public class CoordinateConverter
+    public class CoordinateConverter : ICoordinateConverter
     {
         public double RealX1 {get; private set; }
         public double RealX2 {get; private set; }

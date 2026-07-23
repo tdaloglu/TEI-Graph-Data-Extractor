@@ -77,10 +77,10 @@ namespace TEIGraphDataExtractor.Utils
 
         public (double PixelX, double PixelY) RealWorldToPixel(double realX, double realY)
         {
-            if (!IsCalibrated) return (0, 0);
+            if (!IsCalibrated || Math.Abs(_scaleX) < 0.0001 || Math.Abs(_scaleY) < 0.0001) return (0, 0);
 
             double pixelX = X1PixelX + (realX - RealX1) / _scaleX;
-            double pixelY = Y1PixelY + (realY - RealY1) / _scaleY;
+            double pixelY = Y1PixelY - (realY - RealY1) / _scaleY;
 
             return (pixelX, pixelY);
         }

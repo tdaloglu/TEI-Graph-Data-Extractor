@@ -11,6 +11,8 @@ using TEIGraphDataExtractor.ViewModels;
 using TEIGraphDataExtractor.Services.Export;
 using Avalonia.Platform;
 using Avalonia;
+using System.Linq;
+using System.Linq.Expressions;
 
 
 namespace TEIGraphDataExtractor.Views;
@@ -78,7 +80,22 @@ public partial class MainWindow : Window
             if (DataContext is MainWindowViewModel vm)
             {
                 vm.GraphImage = bitmap;
-                SetCalibrationStep("X1", "📍 Resim üzerinde X1 (Min) noktasını tıklayarak seçin...");
+
+                // [KİLİT ÇÖZÜM]: Eğer önceki oturumdan gelen kalibrasyon hafızası varsa X1-X2 SEÇTİRMEYE ZORLAMA!
+                if (vm.MinPixelX != 0 || vm.XMaxPixelX != 0 || vm.Converter.IsCalibrated)
+                {
+                    _activeCalibrationStep = ""; // Kalibrasyon modunu tamamen kapat!
+                    vm.SystemStatus = "📂 Önceki oturum kalibrasyonu aktif! Doğrudan çizime veya düzenlemeye devam edebilirsiniz.";
+                }
+                else
+                {
+                    // Sıfırdan başlanıyorsa X1 seçtir
+                    SetCalibrationStep("X1", "📍 Resim üzerinde X1 (Min) noktasını tıklayarak seçin...");
+                }
+
+                // Resim tuvale tam yerleşene kadar 150 milisaniye bekle ve eski noktaları ekrana çiz!
+                await System.Threading.Tasks.Task.Delay(150);
+                RedrawMemoryPoints();
             }
         }
     }
@@ -674,6 +691,10 @@ public partial class MainWindow : Window
         if (DataContext is MainWindowViewModel vm)
         {
             bool success = vm.TryCalibrate();
+            if (success)
+            {
+                RedrawMemoryPoints();
+            }
         }
     }
 
@@ -852,12 +873,20 @@ public partial class MainWindow : Window
        
        bool isCtrlOrCmdPressed = e.KeyModifiers.HasFlag(KeyModifiers.Control) ||
                            e.KeyModifiers.HasFlag(KeyModifiers.Meta);
-    if (isCtrlOrCmdPressed && e.Key == Key.Z)
-    {
-        TekDeletePointButton_Click(sender, new Avalonia.Interactivity.RoutedEventArgs());
-        e.Handled = true;
-    }
+        if (isCtrlOrCmdPressed && e.Key == Key.Z)
+        {
+            TekDeletePointButton_Click(sender, new Avalonia.Interactivity.RoutedEventArgs());
+            e.Handled = true;
+        }
 
+        if (isCtrlOrCmdPressed && e.Key == Key.S)
+        {
+            if (DataContext is MainWindowViewModel vmSave)
+            {
+                vmSave.SaveWorkspace();
+            }
+            e.Handled = true;
+        }
     }
 
     // kullanıcı penceredeki tamama basarsa 10 saniyeyi beklemeden hemen kapat
@@ -1001,4 +1030,34 @@ private void UpdateCursor()
     }
 }
 
+    public void RedrawMemoryPoints()
+    {
+        if (DataContext is not MainWindowViewModel vm) return;
+        if (vm.LiveDataPoints.Count == 0) return;
+
+        foreach (var dot in _drawnDataDots)
+        {
+            DrawingCanvas.Children.Remove(dot);
+        }
+        _drawnDataDots.Clear();
+
+        foreach (var pt in vm.LiveDataPoints) 
+        {
+            var pixelCoords = vm.Converter.RealWorldToPixel(pt.XValue, pt.YValue);
+
+            var group = vm.ZGroups.FirstOrDefault(g => g.Id == pt.ZGroupId);
+            IBrush dotColor = Brushes.Red;
+            if (group != null && !string.IsNullOrEmpty(group.ColorHex))
+            {
+                try { dotColor = Brush.Parse(group.ColorHex);} catch { }
+            }
+
+            var dataDot = new Ellipse {Width = 4, Height = 4, Fill = dotColor, Tag = pt};
+            Canvas.SetLeft(dataDot, pixelCoords.PixelX - 2);
+            Canvas.SetTop(dataDot, pixelCoords.PixelY - 2);
+            DrawingCanvas.Children.Add(dataDot);
+            _drawnDataDots.Add(dataDot);
+        }
+        vm.SystemStatus = $"🚀 Harika! Önceki oturumdan kalan {vm.LiveDataPoints.Count} nokta tuvale çizildi.";
+    }
 }

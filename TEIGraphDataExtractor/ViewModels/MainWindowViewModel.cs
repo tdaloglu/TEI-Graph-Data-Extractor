@@ -7,6 +7,7 @@ using TEIGraphDataExtractor.Utils;
 using TEIGraphDataExtractor.Services.Database;
 using TEIGraphDataExtractor.Services.Export;
 using System.IO;
+using System.Text.Json;
 using System.Linq;
 
 
@@ -26,6 +27,8 @@ public partial class MainWindowViewModel : ViewModelBase
         Converter = converter;
         _graphDataService = graphDataService;
         _exportStrategy = exportStrategy;
+
+        LoadWorkspace();
     }
 
     public MainWindowViewModel() : this(new CoordinateConverter(), new GraphDataService(), new CsvExportStrategy()) {}
@@ -608,6 +611,105 @@ public async void TriggerGroupWarning()
         if (updatedCount > 0)
         {
             SystemStatus = $"🔄 Grup {groupId} güncellendi -> {updatedCount} noktanın Z değeri {newZValue:F3} yapıldı.";
+        }
+    }
+
+    private string GetSaveFilePath()
+    {
+        string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TEIGraphDataExtractor");
+        if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+        return Path.Combine(folder, "workspace_state.json");
+    }
+
+    public void SaveWorkspace()
+    {
+        try
+        {
+            var state = new WorkspaceState
+            {
+                MinPixelX = this.MinPixelX, XMaxPixelX = this.XMaxPixelX,
+                MinPixelY = this.MinPixelY, YMaxPixelY = this.YMaxPixelY,
+                RealXMinDouble = this.RealXMinDouble, RealXMaxDouble = this.RealXMaxDouble,
+                RealYMinDouble = this.RealYMinDouble, RealYMaxDouble = this.RealYMaxDouble,
+                RealXMinStr = this.RealXMin, RealXMaxStr = this.RealXMax,
+                RealYMinStr = this.RealYMin, RealYMaxStr = this.RealYMax,
+                GroupCount = this._groupCount, CurrentOrderIndex = this._currentOrderIndex,
+                Points = this.LiveDataPoints.ToList(),
+                Groups = this.ZGroups.Select(g => new ZGroupItemDto
+                {
+                    Id = g.Id, ZValue = g.ZValue, ZValueText = g.ZValueText,
+                    ColorHex = g.ColorHex, IsActive = g.IsActive
+                }).ToList()
+            };
+
+            string json = JsonSerializer.Serialize(state, new JsonSerializerOptions {WriteIndented = true});
+            File.WriteAllText(GetSaveFilePath(), json);
+
+            SystemStatus = "💾 Başarılı: Çalışma alanınız (noktalar ve gruplar) kaydedildi! (Ctrl+S)";
+        }
+        catch (Exception ex)
+        {
+            SystemStatus = $"⚠️ Kayıt Hatası: {ex.Message}";
+        }
+    }
+
+    public void LoadWorkspace()
+    {
+        try
+        {
+            string filePath = GetSaveFilePath();
+            if (!File.Exists(filePath)) return;
+
+            string json = File.ReadAllText(filePath);
+            var state = JsonSerializer.Deserialize<WorkspaceState>(json);
+            if (state == null) return;
+
+            this.MinPixelX = state.MinPixelX; this.XMaxPixelX = state.XMaxPixelX;
+            this.MinPixelY = state.MinPixelY; this.YMaxPixelY = state.YMaxPixelY;
+            this.RealXMinDouble = state.RealXMinDouble; this.RealXMaxDouble = state.RealXMaxDouble;
+            this.RealYMinDouble = state.RealYMinDouble; this.RealYMaxDouble = state.RealYMaxDouble;
+            this.RealXMin = state.RealXMinStr; this.RealXMax = state.RealXMaxStr;
+            this.RealYMin = state.RealYMinStr; this.RealYMax = state.RealYMaxStr;
+            this._currentOrderIndex = state.CurrentOrderIndex;
+
+            if (this.MinPixelX != 0 || this.XMaxPixelX != 0)
+            {
+                Converter.Calibrate(
+                    this.MinPixelX, this.XMaxPixelX, this.MinPixelY, this.YMaxPixelY, 
+                    this.RealXMinDouble, this.RealXMaxDouble, this.RealYMinDouble, this.RealYMaxDouble
+                );
+            }
+
+            this.ZGroups.Clear();
+            foreach (var gDto in state.Groups)
+            {
+                var groupItem = new ZGroupItem
+                {
+                    Id = gDto.Id, ZValue = gDto.ZValue, ZValueText = gDto.ZValueText,
+                    ColorHex = gDto.ColorHex, IsActive = gDto.IsActive,
+                    StatusReporter = (mesaj) => SystemStatus = mesaj,
+                    OnValueChanged = (gId, newVal) => UpdatePointsForGroup(gId, newVal)
+                };
+                this.ZGroups.Add(groupItem);
+                if (groupItem.IsActive) SetActiveGroup(groupItem);
+            }
+            this._groupCount = state.GroupCount;
+            this._groupCountText = state.GroupCount.ToString();
+            RaisePropertyChanged(nameof(GroupCountText));
+
+            this.LiveDataPoints.Clear();
+            foreach (var pt in state.Points)
+            {
+                this.LiveDataPoints.Add(pt);
+            }
+
+            if (LiveDataPoints.Count > 0 || ZGroups.Count > 0)
+            {
+                SystemStatus = "📂 Önceki oturum başarıyla yüklendi! Lütfen üzerinde çalıştığınız resmi yükleyin.";
+            }
+        } catch (Exception ex)
+        {
+            SystemStatus = $"⚠️ Geçmişi Yükleme Hatası: {ex.Message}";
         }
     }
 }

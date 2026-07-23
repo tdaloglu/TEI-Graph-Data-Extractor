@@ -15,6 +15,7 @@ public class WorkspaceState
     public double RealYMaxDouble {get; set; }
     public string RealXMinStr {get; set; } = "0";
     public string RealXMaxStr {get; set; } = "0";
+    public string RealYMinStr {get; set; } = "0";
     public string RealYMaxStr {get; set; } = "0";
 
     public int GroupCount {get; set; }
